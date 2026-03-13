@@ -1,7 +1,7 @@
 import { supabase } from './client'
 import type {
   RpcQueueParams, RpcQueueRow, RpcQueueEnvelope,
-  RpcDetailParams, RpcDetailRow,
+  RpcDetailParams, RpcDetailRow, RpcEvidence, RpcContact, RpcContactPath, RpcSourceLink,
   RpcAnalyticsParams, RpcAnalyticsRow,
   RpcConfirmedLeadsEnvelope,
 } from '@core/types/rpc'
@@ -37,16 +37,60 @@ export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow |
   if (error) throw new Error(error.message)
   if (!data) return null
 
-  // Handle both array and single-object responses defensively
-  if (Array.isArray(data)) {
-    return (data as RpcDetailRow[])[0] ?? null
+  const raw = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>
+  if (!raw) return null
+
+  // Flat response: { candidate_id, display_label_v2, ... }
+  if (raw.candidate_id) return raw as unknown as RpcDetailRow
+
+  // Wrapped flat: { ok, item: { candidate_id, ... } }
+  if (raw.item && typeof raw.item === 'object' && (raw.item as Record<string, unknown>).candidate_id) {
+    return raw.item as unknown as RpcDetailRow
   }
-  if (typeof data === 'object') {
-    // Wrapped: { ok, item } or direct object
-    const d = data as Record<string, unknown>
-    if (d.item && typeof d.item === 'object') return d.item as RpcDetailRow
-    if (d.candidate_id) return data as RpcDetailRow
+
+  // Nested shape: { ok, header:{...}, signal:{...}, quality:{...}, contact:{...}, evidence:{...} }
+  if (raw.header || raw.signal || raw.quality || raw.contact) {
+    const h  = (raw.header   ?? {}) as Record<string, unknown>
+    const s  = (raw.signal   ?? {}) as Record<string, unknown>
+    const q  = (raw.quality  ?? {}) as Record<string, unknown>
+    const c  = (raw.contact  ?? {}) as Record<string, unknown>
+    const ev = (raw.evidence ?? {}) as Record<string, unknown>
+
+    return {
+      candidate_id:             (h.candidate_id  ?? raw.candidate_id  ?? '') as string,
+      display_label_v2:         (h.display_label_v2 ?? '') as string,
+      entity_type_ru:           (h.entity_type_ru   ?? '') as string,
+      market_role_label_ru:     (h.market_role_label_ru ?? '') as string,
+      signal_type:              (s.signal_type    ?? '') as string,
+      normalized_signal_type_v2:(s.normalized_signal_type_v2 ?? null) as string | null,
+      object_anchor_label_v2:   (s.object_anchor_label_v2   ?? null) as string | null,
+      heat_label_ru:            (q.heat_label_ru      ?? '') as string,
+      freshness_label_ru:       (q.freshness_label_ru ?? '') as string,
+      rank_total_v2:            (q.rank_total_v2      ?? 0)  as number,
+      score_total:              (q.score_total         ?? null) as number | null,
+      actionable_bucket_ru:     (q.actionable_bucket_ru ?? '') as string,
+      contact_path_label_ru_v2: (c.contact_path_label_ru_v2 ?? '') as string,
+      has_direct_contact:       (c.has_direct_contact  ?? false) as boolean,
+      has_indirect_path:        (c.has_indirect_path   ?? false) as boolean,
+      company_website:          (c.company_website  ?? null) as string | null,
+      proof_url:                (c.proof_url        ?? null) as string | null,
+      evidence_count: (
+        ev.evidence_count != null
+          ? ev.evidence_count
+          : Array.isArray(ev.items) ? (ev.items as unknown[]).length : 0
+      ) as number,
+      evidence:     raw.evidence as { items: RpcEvidence[] } | null,
+      contacts:     (raw.contacts     ?? null) as RpcContact[]     | null,
+      contact_path: (raw.contact_path ?? null) as RpcContactPath[] | null,
+      source_links: (raw.source_links ?? null) as RpcSourceLink[]  | null,
+      region:       (h.region      ?? raw.region      ?? null) as string | null,
+      source_name:  (h.source_name  ?? raw.source_name  ?? null) as string | null,
+      source_url:   (h.source_url   ?? raw.source_url   ?? null) as string | null,
+      demand_hint:  (h.demand_hint  ?? raw.demand_hint  ?? null) as string | null,
+      quality_score:(q.quality_score ?? raw.quality_score ?? null) as number | null,
+    }
   }
+
   return null
 }
 
