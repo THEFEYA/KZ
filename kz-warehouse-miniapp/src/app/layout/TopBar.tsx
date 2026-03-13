@@ -61,7 +61,9 @@ export function TopBar() {
               fontSize: location.pathname === '/' ? 'var(--text-lg)' : 'var(--text-md)',
               fontWeight: 'var(--fw-bold)',
               color: 'var(--color-text-primary)',
-              truncate: true,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
             {title}
