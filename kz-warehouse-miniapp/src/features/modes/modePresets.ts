@@ -9,9 +9,6 @@ export const MODE_PRESETS: ModePreset[] = [
       limit: 10,
       tier: 'all_active',
       region: null,
-      bucket: null,
-      heat: null,
-      freshness: null,
     },
   },
   {
@@ -35,8 +32,6 @@ export const MODE_PRESETS: ModePreset[] = [
       bucket: 'action_queue',
       region: 'Алматы',
       limit: 5,
-      heat: null,
-      freshness: null,
     },
   },
   {
@@ -47,8 +42,6 @@ export const MODE_PRESETS: ModePreset[] = [
       bucket: 'action_queue',
       region: 'Астана',
       limit: 5,
-      heat: null,
-      freshness: null,
     },
   },
 ]

@@ -1,7 +1,7 @@
 import { useSetMode, useActiveMode } from '@core/state/selectors'
 import { useFilterStore } from '@core/state/useFilterStore'
 import { MODE_PRESETS } from './modePresets'
-import type { ModeId } from '@core/types/ui'
+import type { ModeId, ActiveFilters } from '@core/types/ui'
 import { hapticSelect } from '@core/telegram/haptics'
 
 export function useApplyMode() {
@@ -14,7 +14,7 @@ export function useApplyMode() {
     const preset = MODE_PRESETS.find((m) => m.id === id)
     if (!preset) return
     setMode(id)
-    const nextFilters = {
+    const nextFilters: ActiveFilters = {
       region: null,
       marketRole: null,
       heat: null,
