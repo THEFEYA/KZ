@@ -23,22 +23,26 @@ export function toChartData(items: BreakdownItem[], maxItems = 8): ChartDatum[] 
     .slice(0, maxItems)
     .map((item, i) => ({
       name: item.label,
-      value: item.count,
+      // count is normalized by mapper from backend's value|count field
+      value: item.count ?? (item as BreakdownItem & { value?: number }).value ?? 0,
       pct: item.pct,
       fill: PALETTE[i % PALETTE.length],
     }))
 }
 
 export function toMiniBarData(items: BreakdownItem[], maxItems = 5): ChartDatum[] {
-  const total = items.reduce((s, i) => s + i.count, 0)
+  const total = items.reduce((s, i) => s + (i.count ?? (i as BreakdownItem & { value?: number }).value ?? 0), 0)
   return items
     .slice(0, maxItems)
-    .map((item, i) => ({
-      name: item.label,
-      value: item.count,
-      pct: total > 0 ? Math.round((item.count / total) * 100) : 0,
-      fill: PALETTE[i % PALETTE.length],
-    }))
+    .map((item, i) => {
+      const v = item.count ?? (item as BreakdownItem & { value?: number }).value ?? 0
+      return {
+        name: item.label,
+        value: v,
+        pct: total > 0 ? Math.round((v / total) * 100) : 0,
+        fill: PALETTE[i % PALETTE.length],
+      }
+    })
 }
 
 export function computeInsight(
