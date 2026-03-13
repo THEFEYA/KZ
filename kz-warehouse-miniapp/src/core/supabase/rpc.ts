@@ -40,8 +40,8 @@ export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow |
   const raw = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>
   if (!raw) return null
 
-  // Flat response: { candidate_id, display_label_v2, ... }
-  if (raw.candidate_id) return raw as unknown as RpcDetailRow
+  // Flat response: candidate_id AND flat fields present at top level
+  if (raw.candidate_id && raw.display_label_v2) return raw as unknown as RpcDetailRow
 
   // Wrapped flat: { ok, item: { candidate_id, ... } }
   if (raw.item && typeof raw.item === 'object' && (raw.item as Record<string, unknown>).candidate_id) {

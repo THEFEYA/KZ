@@ -99,7 +99,9 @@ export function useAnalyticsQuery(filters: ActiveFilters, mode: ModePreset | nul
 
   const params: RpcAnalyticsParams = {
     p_region:             filters.region ?? mode?.params.region ?? null,
-    p_bucket:             filters.bucket ?? null,
+    p_bucket:             filters.bucket
+                            ?? mode?.params.bucket
+                            ?? (mode?.params.tier === 'all_active' ? 'all_active' : null),
     p_market_role:        filters.marketRole ?? null,
     p_heat_label_ru:      mapHeat(filters.heat ?? mode?.params.heat),
     p_freshness_label_ru: mapFreshness(filters.freshness ?? mode?.params.freshness),
