@@ -48,13 +48,17 @@ export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow |
     return raw.item as unknown as RpcDetailRow
   }
 
-  // Nested shape: { ok, header:{...}, signal:{...}, quality:{...}, contact:{...}, evidence:{...} }
+  // Nested shape: { ok, header:{...}, signal:{...}, quality:{...}, contact:{...}, evidence:{...}, active_lead:{...}, dedupe:{...} }
   if (raw.header || raw.signal || raw.quality || raw.contact) {
-    const h  = (raw.header   ?? {}) as Record<string, unknown>
-    const s  = (raw.signal   ?? {}) as Record<string, unknown>
-    const q  = (raw.quality  ?? {}) as Record<string, unknown>
-    const c  = (raw.contact  ?? {}) as Record<string, unknown>
-    const ev = (raw.evidence ?? {}) as Record<string, unknown>
+    const h  = (raw.header      ?? {}) as Record<string, unknown>
+    const s  = (raw.signal      ?? {}) as Record<string, unknown>
+    const q  = (raw.quality     ?? {}) as Record<string, unknown>
+    const c  = (raw.contact     ?? {}) as Record<string, unknown>
+    const ev = (raw.evidence    ?? {}) as Record<string, unknown>
+    const al = (raw.active_lead ?? {}) as Record<string, unknown>
+    const dd = (raw.dedupe      ?? {}) as Record<string, unknown>
+
+    const dupArr = Array.isArray(dd.related_duplicates) ? dd.related_duplicates as unknown[] : null
 
     return {
       candidate_id:             (h.candidate_id  ?? raw.candidate_id  ?? '') as string,
@@ -88,6 +92,14 @@ export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow |
       source_url:   (h.source_url   ?? raw.source_url   ?? null) as string | null,
       demand_hint:  (h.demand_hint  ?? raw.demand_hint  ?? null) as string | null,
       quality_score:(q.quality_score ?? raw.quality_score ?? null) as number | null,
+      // Enriched fields
+      lead_status_ru:     (al.lead_status_ru ?? null) as string | null,
+      lead_score:         (al.score_total    ?? null) as number | null,
+      relevance_label_ru: (q.relevance_label_ru ?? null) as string | null,
+      source_tier_ru:     (h.source_tier_ru  ?? null) as string | null,
+      evidence_short:     (ev.evidence_short  ?? null) as string | null,
+      evidence_full:      (ev.evidence_full   ?? null) as string | null,
+      duplicate_count:    dupArr != null ? dupArr.length : (typeof dd.count === 'number' ? dd.count : null),
     }
   }
 

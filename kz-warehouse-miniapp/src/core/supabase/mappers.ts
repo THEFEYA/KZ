@@ -138,6 +138,13 @@ export function mapDetailRow(row: RpcDetailRow): CandidateDetail {
     })),
     evidences:   evidenceItems.length > 0 ? evidenceItems : null,
     sourceLinks: sourceLinks.length > 0 ? sourceLinks : null,
+    leadStatusRu:     row.lead_status_ru     ?? null,
+    leadScore:        row.lead_score         ?? null,
+    relevanceLabelRu: row.relevance_label_ru ?? null,
+    sourceTierRu:     row.source_tier_ru     ?? null,
+    evidenceShort:    row.evidence_short     ?? null,
+    evidenceFull:     row.evidence_full      ?? null,
+    duplicateCount:   row.duplicate_count    ?? null,
   }
 }
 

@@ -83,6 +83,14 @@ export interface RpcDetailRow {
   source_url: string | null
   demand_hint: string | null
   quality_score: number | null         // fallback alias
+  // Enriched fields — from nested active_lead / quality / header / evidence / dedupe sections
+  lead_status_ru: string | null
+  lead_score: number | null
+  relevance_label_ru: string | null
+  source_tier_ru: string | null
+  evidence_short: string | null
+  evidence_full: string | null
+  duplicate_count: number | null
 }
 
 export interface RpcContact {

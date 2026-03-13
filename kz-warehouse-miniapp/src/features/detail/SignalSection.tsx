@@ -48,6 +48,12 @@ export function SignalSection({ detail }: SignalSectionProps) {
             </Field>
           )}
 
+          {detail.sourceTierRu && (
+            <Field label="Приоритет источника">
+              <Chip variant="default" size="sm">{detail.sourceTierRu}</Chip>
+            </Field>
+          )}
+
           <Field label="Очередь">
             <Chip variant="default" size="sm">{labelQueueBucket(detail.queueBucket)}</Chip>
           </Field>

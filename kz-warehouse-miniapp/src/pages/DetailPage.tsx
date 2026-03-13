@@ -66,7 +66,7 @@ export function DetailPage() {
           <SignalSection detail={detail} />
           <QualitySection detail={detail} />
           <ContactSection detail={detail} />
-          <EvidenceSection evidences={detail.evidences} />
+          <EvidenceSection evidences={detail.evidences} evidenceShort={detail.evidenceShort} evidenceFull={detail.evidenceFull} />
           <SourceLinksSection links={detail.sourceLinks} />
         </div>
       </div>

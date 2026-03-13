@@ -31,6 +31,14 @@ export interface CandidateDetail extends Candidate {
   contactPath: ContactPathStep[] | null
   evidences: Evidence[] | null
   sourceLinks: SourceLink[] | null
+  // Enriched fields from richer backend response sections
+  leadStatusRu: string | null
+  leadScore: number | null
+  relevanceLabelRu: string | null
+  sourceTierRu: string | null
+  evidenceShort: string | null
+  evidenceFull: string | null
+  duplicateCount: number | null
 }
 
 export interface ContactInfo {

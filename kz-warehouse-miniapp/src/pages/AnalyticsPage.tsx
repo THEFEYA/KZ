@@ -12,7 +12,7 @@ import { FreshnessChart } from '@features/analytics/FreshnessChart'
 import { CardSkeleton } from '@shared/ui/Skeleton'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { EmptyState } from '@shared/ui/EmptyState'
-import { useAnalyticsQuery } from '@core/supabase/queries'
+import { useAnalyticsQuery, useConfirmedLeadsQuery } from '@core/supabase/queries'
 import { useFilters, useActiveMode } from '@core/state/selectors'
 import type { AnalyticsViewType, AnalyticsSlice } from '@core/types/analytics'
 
@@ -23,6 +23,8 @@ export function AnalyticsPage() {
   const filters = useFilters()
   const mode = useActiveMode()
   const { data: analytics, isLoading, error, refetch } = useAnalyticsQuery(filters, mode)
+  // Confirmed leads come from the dedicated source — analytics RPC returns 0 for this bucket
+  const { data: confirmedLeadsData } = useConfirmedLeadsQuery(1)
 
   const renderChart = () => {
     if (!analytics) return null
@@ -57,7 +59,7 @@ export function AnalyticsPage() {
                 { label: 'Всего', value: analytics.summary.total },
                 { label: 'Рабочая', value: analytics.summary.actionQueue, color: 'var(--color-action)' },
                 { label: 'Проверка', value: analytics.summary.reviewQueue, color: 'var(--color-review)' },
-                { label: 'Подтверждённые', value: analytics.summary.confirmedLeads, color: 'var(--color-confirmed)' },
+                { label: 'Подтверждённые', value: confirmedLeadsData?.count ?? analytics.summary.confirmedLeads, color: 'var(--color-confirmed)' },
               ].map((m) => (
                 <div
                   key={m.label}

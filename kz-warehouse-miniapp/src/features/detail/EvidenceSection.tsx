@@ -6,15 +6,33 @@ import { formatDate } from '@core/utils/format'
 
 interface EvidenceSectionProps {
   evidences: Evidence[] | null
+  evidenceShort?: string | null
+  evidenceFull?: string | null
 }
 
-export function EvidenceSection({ evidences }: EvidenceSectionProps) {
-  if (!evidences || evidences.length === 0) return null
+export function EvidenceSection({ evidences, evidenceShort, evidenceFull }: EvidenceSectionProps) {
+  const hasItems = evidences && evidences.length > 0
+  const hasSummary = !!(evidenceShort || evidenceFull)
+  if (!hasItems && !hasSummary) return null
 
   return (
-    <Section title={`Доказательства · ${evidences.length}`}>
+    <Section title={hasItems ? `Доказательства · ${evidences!.length}` : 'Доказательства'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {evidences.map((ev, i) => (
+        {!hasItems && hasSummary && (
+          <Panel>
+            {evidenceShort && (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--lh-relaxed)', marginBottom: evidenceFull ? 10 : 0 }}>
+                {evidenceShort}
+              </p>
+            )}
+            {evidenceFull && (
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--lh-relaxed)', opacity: 0.85 }}>
+                {evidenceFull}
+              </p>
+            )}
+          </Panel>
+        )}
+        {hasItems && evidences!.map((ev, i) => (
           <EvidenceCard key={i} evidence={ev} />
         ))}
       </div>
