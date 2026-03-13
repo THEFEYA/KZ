@@ -4,13 +4,14 @@ export const MODE_PRESETS: ModePreset[] = [
   {
     id: 'wide-10',
     ruName: 'Широкий 10',
-    description: 'Широкий срез tier_1 + tier_2, горячие и тёплые, свежие и актуальные',
+    description: 'Широкий срез без жёсткого сужения по одной горячести, свежести или очереди',
     params: {
       limit: 10,
       tier: 'all_active',
-      heat: 'warm',
-      freshness: 'actual',
       region: null,
+      bucket: null,
+      heat: null,
+      freshness: null,
     },
   },
   {
@@ -34,6 +35,8 @@ export const MODE_PRESETS: ModePreset[] = [
       bucket: 'action_queue',
       region: 'Алматы',
       limit: 5,
+      heat: null,
+      freshness: null,
     },
   },
   {
@@ -44,6 +47,8 @@ export const MODE_PRESETS: ModePreset[] = [
       bucket: 'action_queue',
       region: 'Астана',
       limit: 5,
+      heat: null,
+      freshness: null,
     },
   },
 ]

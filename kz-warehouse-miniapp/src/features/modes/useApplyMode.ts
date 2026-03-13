@@ -11,17 +11,24 @@ export function useApplyMode() {
 
   const applyMode = (id: ModeId) => {
     hapticSelect()
-    const preset = MODE_PRESETS.find(m => m.id === id)
+    const preset = MODE_PRESETS.find((m) => m.id === id)
     if (!preset) return
     setMode(id)
-    // Apply mode params as filter overrides (but don't clear user filters entirely)
-    const overrides: Record<string, unknown> = {}
-    if (preset.params.region !== undefined) overrides.region = preset.params.region
-    if (preset.params.limit) overrides.limit = preset.params.limit
-    if (preset.params.heat) overrides.heat = preset.params.heat
-    if (preset.params.freshness) overrides.freshness = preset.params.freshness
-    if (preset.params.bucket) overrides.bucket = preset.params.bucket
-    setFilters(overrides as Parameters<typeof setFilters>[0])
+    const nextFilters = {
+      region: null,
+      marketRole: null,
+      heat: null,
+      freshness: null,
+      contactType: null,
+      bucket: null,
+      limit: 10,
+    }
+    if (preset.params.region !== undefined) nextFilters.region = preset.params.region
+    if (preset.params.limit !== undefined) nextFilters.limit = preset.params.limit
+    if (preset.params.heat !== undefined) nextFilters.heat = preset.params.heat
+    if (preset.params.freshness !== undefined) nextFilters.freshness = preset.params.freshness
+    if (preset.params.bucket !== undefined) nextFilters.bucket = preset.params.bucket
+    setFilters(nextFilters)
   }
 
   return { applyMode, currentMode, presets: MODE_PRESETS }
