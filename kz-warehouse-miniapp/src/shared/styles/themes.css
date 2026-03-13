@@ -1,0 +1,143 @@
+/* ============================================================
+   NIGHT OPS — тёмный синий, cyan акценты
+   ============================================================ */
+[data-theme="night-ops"] {
+  --color-bg: #070b12;
+  --color-bg-raised: #0d1420;
+  --color-bg-elevated: #111d2e;
+  --color-surface: #0f1a28;
+  --color-surface-hover: #162236;
+  --color-border: rgba(0, 212, 255, 0.08);
+  --color-border-strong: rgba(0, 212, 255, 0.18);
+
+  --color-accent: #00d4ff;
+  --color-accent-dim: rgba(0, 212, 255, 0.15);
+  --color-accent-glow: rgba(0, 212, 255, 0.3);
+  --color-accent-2: #0066ff;
+  --color-accent-3: #7c3aed;
+
+  --color-text-primary: #e8f4ff;
+  --color-text-secondary: rgba(232, 244, 255, 0.6);
+  --color-text-tertiary: rgba(232, 244, 255, 0.35);
+  --color-text-accent: #00d4ff;
+
+  --color-hot: #ff4444;
+  --color-warm: #f59e0b;
+  --color-cold: #64748b;
+  --color-fresh: #10b981;
+  --color-actual: #06b6d4;
+  --color-stale: #64748b;
+
+  --color-direct-contact: #10b981;
+  --color-path-contact: #7c3aed;
+  --color-no-contact: #475569;
+
+  --color-confirmed: #f59e0b;
+  --color-action: #00d4ff;
+  --color-review: #7c3aed;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --glow-accent: 0 0 16px rgba(0, 212, 255, 0.25);
+  --glow-strong: 0 0 24px rgba(0, 212, 255, 0.4);
+}
+
+/* ============================================================
+   ACID PULSE — тёмный, acid green / yellow акценты
+   ============================================================ */
+[data-theme="acid-pulse"] {
+  --color-bg: #060803;
+  --color-bg-raised: #0c1005;
+  --color-bg-elevated: #121608;
+  --color-surface: #0f1306;
+  --color-surface-hover: #161a09;
+  --color-border: rgba(163, 230, 53, 0.08);
+  --color-border-strong: rgba(163, 230, 53, 0.18);
+
+  --color-accent: #a3e635;
+  --color-accent-dim: rgba(163, 230, 53, 0.12);
+  --color-accent-glow: rgba(163, 230, 53, 0.25);
+  --color-accent-2: #facc15;
+  --color-accent-3: #22c55e;
+
+  --color-text-primary: #f0f7e6;
+  --color-text-secondary: rgba(240, 247, 230, 0.6);
+  --color-text-tertiary: rgba(240, 247, 230, 0.35);
+  --color-text-accent: #a3e635;
+
+  --color-hot: #ff5500;
+  --color-warm: #facc15;
+  --color-cold: #4d6a26;
+  --color-fresh: #a3e635;
+  --color-actual: #22c55e;
+  --color-stale: #4d6a26;
+
+  --color-direct-contact: #a3e635;
+  --color-path-contact: #facc15;
+  --color-no-contact: #374151;
+
+  --color-confirmed: #facc15;
+  --color-action: #a3e635;
+  --color-review: #22c55e;
+
+  --color-success: #a3e635;
+  --color-warning: #facc15;
+  --color-error: #ff5500;
+
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --glow-accent: 0 0 16px rgba(163, 230, 53, 0.2);
+  --glow-strong: 0 0 24px rgba(163, 230, 53, 0.35);
+}
+
+/* ============================================================
+   VIOLET GLASS — тёмный, violet / pink акценты
+   ============================================================ */
+[data-theme="violet-glass"] {
+  --color-bg: #08060f;
+  --color-bg-raised: #110d1e;
+  --color-bg-elevated: #18122e;
+  --color-surface: #14102a;
+  --color-surface-hover: #1d1638;
+  --color-border: rgba(167, 139, 250, 0.1);
+  --color-border-strong: rgba(167, 139, 250, 0.22);
+
+  --color-accent: #a78bfa;
+  --color-accent-dim: rgba(167, 139, 250, 0.12);
+  --color-accent-glow: rgba(167, 139, 250, 0.28);
+  --color-accent-2: #ec4899;
+  --color-accent-3: #06b6d4;
+
+  --color-text-primary: #f0eeff;
+  --color-text-secondary: rgba(240, 238, 255, 0.6);
+  --color-text-tertiary: rgba(240, 238, 255, 0.35);
+  --color-text-accent: #a78bfa;
+
+  --color-hot: #f43f5e;
+  --color-warm: #f97316;
+  --color-cold: #475569;
+  --color-fresh: #a78bfa;
+  --color-actual: #06b6d4;
+  --color-stale: #475569;
+
+  --color-direct-contact: #a78bfa;
+  --color-path-contact: #ec4899;
+  --color-no-contact: #334155;
+
+  --color-confirmed: #f97316;
+  --color-action: #a78bfa;
+  --color-review: #ec4899;
+
+  --color-success: #a78bfa;
+  --color-warning: #f97316;
+  --color-error: #f43f5e;
+
+  --shadow-card: 0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.6);
+  --glow-accent: 0 0 16px rgba(167, 139, 250, 0.22);
+  --glow-strong: 0 0 28px rgba(167, 139, 250, 0.38);
+}
