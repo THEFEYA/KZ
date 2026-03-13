@@ -10,11 +10,12 @@ export interface Candidate {
   id: string
   displayEntity: string
   entityType: EntityType
-  marketRole: string       // human-readable label
+  marketRole: string
   normalizedSignalType: string
   objectAnchor: string | null
   region: string | null
   sourceLabel: string | null
+  sourceUrl: string | null
   evidenceCount: number
   priorityRank: number
   contactStatus: ContactStatus

@@ -1,7 +1,7 @@
 import type { RpcQueueRow, RpcDetailRow, RpcAnalyticsRow } from '@core/types/rpc'
 import type { Candidate, CandidateDetail, ContactStatus, HeatLevel, FreshnessLevel, EntityType, QueueBucket } from '@core/types/candidate'
 import type { AnalyticsData } from '@core/types/analytics'
-import { labelContactStatus, labelHeat, labelFreshness, labelEntityType, labelMarketRole, labelSignalType } from '@core/utils/labels'
+import { labelContactStatus, labelHeat, labelFreshness, labelMarketRole, labelSignalType } from '@core/utils/labels'
 
 function mapContactStatus(raw: string): ContactStatus {
   if (raw === 'direct_contact_found') return 'direct'
@@ -41,6 +41,7 @@ export function mapQueueRow(row: RpcQueueRow): Candidate {
     objectAnchor: row.object_anchor,
     region: row.region,
     sourceLabel: row.source_label,
+    sourceUrl: (row as RpcQueueRow & { source_url?: string | null }).source_url ?? null,
     evidenceCount: row.evidence_count ?? 0,
     priorityRank: row.priority_rank ?? 0,
     contactStatus: mapContactStatus(row.contact_status),
@@ -62,6 +63,7 @@ export function mapDetailRow(row: RpcDetailRow): CandidateDetail {
     objectAnchor: row.object_anchor,
     region: row.region,
     sourceLabel: row.source_label,
+    sourceUrl: (row as RpcDetailRow & { source_url?: string | null }).source_url ?? null,
     evidenceCount: row.evidences?.length ?? 0,
     priorityRank: 0,
     contactStatus: mapContactStatus(row.contact_status),
@@ -78,45 +80,57 @@ export function mapDetailRow(row: RpcDetailRow): CandidateDetail {
 }
 
 export function mapAnalyticsRow(row: RpcAnalyticsRow): AnalyticsData {
+  const s = row.summary ?? {}
+  const c = row.charts ?? {}
+
+  // Summary: handle both real field names (buyers/potential_buyers/indirect_contact_path/without_contact)
+  // and fallback aliases (action_queue/review_queue/contact_path/no_contact)
+  const summary = {
+    total:          s.total             ?? 0,
+    actionQueue:    s.buyers            ?? s.action_queue   ?? 0,
+    reviewQueue:    s.potential_buyers  ?? s.review_queue   ?? 0,
+    confirmedLeads: s.confirmed_leads   ?? 0,
+    directContact:  s.direct_contact    ?? 0,
+    contactPath:    s.indirect_contact_path ?? s.contact_path ?? 0,
+    noContact:      s.without_contact   ?? s.no_contact     ?? 0,
+    avgPriority:    s.avg_priority      ?? 0,
+  }
+
+  // Charts: handle both nested (charts.by_role) and flat (by_market_role) shapes
+  const safeArr = (v: unknown) => Array.isArray(v) ? v : []
+
+  const bySource      = safeArr(c.by_source)
+  const byContactType = safeArr(c.by_contact ?? c.by_contact_type).map(i => ({
+    ...i, label: labelContactStatus(i.label),
+  }))
+  const byMarketRole  = safeArr(c.by_role ?? c.by_market_role).map(i => ({
+    ...i, label: labelMarketRole(i.label),
+  }))
+  const byQueue       = safeArr(c.by_queue).map(i => ({
+    ...i, label: labelQueueBucket(i.label),
+  }))
+  const byHeat        = safeArr(c.by_heat).map(i => ({
+    ...i, label: labelHeat(i.label),
+  }))
+  const byFreshness   = safeArr(c.by_freshness).map(i => ({
+    ...i, label: labelFreshness(i.label),
+  }))
+
   return {
-    summary: {
-      total: row.summary?.total ?? 0,
-      actionQueue: row.summary?.action_queue ?? 0,
-      reviewQueue: row.summary?.review_queue ?? 0,
-      confirmedLeads: row.summary?.confirmed_leads ?? 0,
-      directContact: row.summary?.direct_contact ?? 0,
-      contactPath: row.summary?.contact_path ?? 0,
-      noContact: row.summary?.no_contact ?? 0,
-      avgPriority: row.summary?.avg_priority ?? 0,
-    },
-    bySource: row.by_source ?? [],
-    byContactType: (row.by_contact_type ?? []).map(i => ({
-      ...i,
-      label: labelContactStatus(i.label),
-    })),
-    byMarketRole: (row.by_market_role ?? []).map(i => ({
-      ...i,
-      label: labelMarketRole(i.label),
-    })),
-    byQueue: (row.by_queue ?? []).map(i => ({
-      ...i,
-      label: labelQueueBucket(i.label),
-    })),
-    byHeat: (row.by_heat ?? []).map(i => ({
-      ...i,
-      label: labelHeat(i.label),
-    })),
-    byFreshness: (row.by_freshness ?? []).map(i => ({
-      ...i,
-      label: labelFreshness(i.label),
-    })),
+    summary,
+    bySource,
+    byContactType,
+    byMarketRole,
+    byQueue,
+    byHeat,
+    byFreshness,
     topInsight: row.top_insight ?? null,
   }
 }
 
 function labelQueueBucket(raw: string): string {
-  if (raw === 'action_queue') return 'Рабочая очередь'
-  if (raw === 'review_queue') return 'Очередь проверки'
+  if (raw === 'action_queue')    return 'Рабочая очередь'
+  if (raw === 'review_queue')    return 'Очередь проверки'
   if (raw === 'confirmed_leads') return 'Подтверждённые'
   return raw
 }

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Page } from '@shared/ui/Page'
 import { DetailHeader } from '@features/detail/DetailHeader'
+import { ActionRow } from '@features/detail/ActionRow'
 import { SignalSection } from '@features/detail/SignalSection'
 import { QualitySection } from '@features/detail/QualitySection'
 import { ContactSection } from '@features/detail/ContactSection'
@@ -59,15 +60,9 @@ export function DetailPage() {
     <Page>
       <div className="animate-fade-in-up" style={{ paddingTop: 'var(--space-2)' }}>
         <DetailHeader detail={detail} />
+        <ActionRow detail={detail} />
 
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 0,
-            paddingTop: 'var(--space-4)',
-          }}
-        >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingTop: 'var(--space-4)' }}>
           <SignalSection detail={detail} />
           <QualitySection detail={detail} />
           <ContactSection detail={detail} />

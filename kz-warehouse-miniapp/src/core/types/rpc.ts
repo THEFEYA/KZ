@@ -1,20 +1,25 @@
 // Raw RPC types — aligned to real Supabase function signatures
 
 // ─── kz_miniapp_queue_v2 ────────────────────────────────────────────────────
-// Overload 1: (p_bucket, p_region, p_market_role, p_heat_label_ru,
-//              p_freshness_label_ru, p_has_contact, p_limit, p_offset)
-// Overload 2: adds p_contact_path_status_v2
-// NOT supported: p_tier, p_role, p_heat, p_freshness, p_contact_type
+// Returns envelope: { ok, items, total, bucket }
+// NOT a raw array — must read .items
 export interface RpcQueueParams {
-  p_bucket: string | null              // 'action_queue' | 'review_queue' | 'confirmed_leads'
-  p_region: string | null              // 'Алматы' | 'Астана' | ...
-  p_market_role: string | null         // role label
+  p_bucket: string | null
+  p_region: string | null
+  p_market_role: string | null
   p_heat_label_ru: string | null       // 'Горячий' | 'Тёплый' | 'Холодный'
   p_freshness_label_ru: string | null  // 'Свежий' | 'Актуальный' | 'Устаревший'
-  p_has_contact: boolean | null        // true = direct only, false = no direct, null = any
+  p_has_contact: boolean | null
   p_contact_path_status_v2: string | null
   p_limit: number
   p_offset: number
+}
+
+export interface RpcQueueEnvelope {
+  ok: boolean
+  items: RpcQueueRow[]
+  total: number
+  bucket: string
 }
 
 export interface RpcQueueRow {
@@ -26,6 +31,7 @@ export interface RpcQueueRow {
   object_anchor: string | null
   region: string | null
   source_label: string | null
+  source_url: string | null
   evidence_count: number
   priority_rank: number
   contact_status: string
@@ -38,6 +44,7 @@ export interface RpcQueueRow {
 
 // ─── kz_miniapp_record_detail_v1 ────────────────────────────────────────────
 // (p_candidate_id uuid, p_lead_id uuid)
+// Returns single object or wrapped { ok, item }
 export interface RpcDetailParams {
   p_candidate_id: string
   p_lead_id: string | null
@@ -61,6 +68,7 @@ export interface RpcDetailRow {
   source_links: RpcSourceLink[] | null
   region: string | null
   source_label: string | null
+  source_url: string | null
 }
 
 export interface RpcContact {
@@ -91,9 +99,7 @@ export interface RpcSourceLink {
 }
 
 // ─── kz_miniapp_analytics_v2 ────────────────────────────────────────────────
-// Overload 1: (p_region, p_bucket, p_market_role, p_heat_label_ru,
-//              p_freshness_label_ru, p_has_contact)
-// Overload 2: adds p_contact_path_status_v2
+// Returns single object (NOT an array): { ok, summary, charts }
 // NOT supported: p_limit, p_offset, p_tier
 export interface RpcAnalyticsParams {
   p_region: string | null
@@ -106,25 +112,40 @@ export interface RpcAnalyticsParams {
 }
 
 export interface RpcAnalyticsRow {
+  ok: boolean
   summary: RpcAnalyticsSummary
-  by_source: RpcBreakdownItem[]
-  by_contact_type: RpcBreakdownItem[]
-  by_market_role: RpcBreakdownItem[]
-  by_queue: RpcBreakdownItem[]
-  by_heat: RpcBreakdownItem[]
-  by_freshness: RpcBreakdownItem[]
-  top_insight: string | null
+  charts: RpcAnalyticsCharts
+  top_insight?: string | null
 }
 
 export interface RpcAnalyticsSummary {
   total: number
-  action_queue: number
-  review_queue: number
-  confirmed_leads: number
-  direct_contact: number
-  contact_path: number
-  no_contact: number
-  avg_priority: number
+  // queue buckets — real field names from backend
+  buyers?: number           // maps to action_queue count
+  potential_buyers?: number // maps to review_queue count
+  confirmed_leads?: number
+  // contact breakdown — real field names
+  direct_contact?: number
+  indirect_contact_path?: number  // maps to contact_path
+  without_contact?: number        // maps to no_contact
+  // fallback aliases (in case backend uses these instead)
+  action_queue?: number
+  review_queue?: number
+  contact_path?: number
+  no_contact?: number
+  avg_priority?: number
+}
+
+export interface RpcAnalyticsCharts {
+  by_source?: RpcBreakdownItem[]
+  by_contact?: RpcBreakdownItem[]      // contact type breakdown
+  by_role?: RpcBreakdownItem[]         // market role breakdown
+  by_queue?: RpcBreakdownItem[]
+  by_heat?: RpcBreakdownItem[]
+  by_freshness?: RpcBreakdownItem[]
+  // fallback flat aliases
+  by_contact_type?: RpcBreakdownItem[]
+  by_market_role?: RpcBreakdownItem[]
 }
 
 export interface RpcBreakdownItem {
