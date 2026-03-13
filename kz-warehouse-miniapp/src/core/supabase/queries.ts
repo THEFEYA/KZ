@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { rpcQueue, rpcDetail, rpcAnalytics } from './rpc'
+import { rpcQueue, rpcDetail, rpcAnalytics, rpcConfirmedLeads } from './rpc'
 import { mapQueueRow, mapDetailRow, mapAnalyticsRow } from './mappers'
 import type { ActiveFilters, ModePreset } from '@core/types/ui'
 import type { RpcQueueParams, RpcAnalyticsParams } from '@core/types/rpc'
+import type { Candidate } from '@core/types/candidate'
 
 // ─── Filter value mappers ───────────────────────────────────────────────────
 // Backend expects Russian labels, not English codes
@@ -42,10 +43,12 @@ function mapContactType(v: string | null | undefined): {
 
 // ─── Hooks ──────────────────────────────────────────────────────────────────
 
+// enabled=false when confirmed_leads tab is active — confirmed leads use a separate query
 export function useQueueQuery(
   bucket: 'action_queue' | 'review_queue' | 'confirmed_leads',
   filters: ActiveFilters,
   mode: ModePreset | null,
+  enabled = true,
 ) {
   const contact = mapContactType(filters.contactType)
 
@@ -68,6 +71,7 @@ export function useQueueQuery(
       const rows = await rpcQueue(params)
       return rows.map(mapQueueRow)
     },
+    enabled,
     staleTime: 2 * 60 * 1000,
     retry: 2,
   })
@@ -112,6 +116,25 @@ export function useAnalyticsQuery(filters: ActiveFilters, mode: ModePreset | nul
       return mapAnalyticsRow(row)
     },
     staleTime: 3 * 60 * 1000,
+    retry: 2,
+  })
+}
+
+// ─── Confirmed leads — dedicated source: public.kz_confirmed_leads ───────────
+// NOT kz_miniapp_queue_v2('confirmed_leads') — that returns 0
+// kz_confirmed_leads(p_limit) returns { ok, count, items }
+
+export function useConfirmedLeadsQuery(limit = 10) {
+  return useQuery({
+    queryKey: ['confirmed_leads', limit],
+    queryFn: async () => {
+      const envelope = await rpcConfirmedLeads(limit)
+      return {
+        count: envelope.count,
+        items: envelope.items.map(mapQueueRow) as Candidate[],
+      }
+    },
+    staleTime: 2 * 60 * 1000,
     retry: 2,
   })
 }

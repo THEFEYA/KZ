@@ -36,8 +36,8 @@ export function QueueList({ candidates, loading, error, onRetry }: QueueListProp
 
   return (
     <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {candidates.map((c) => (
-        <CandidateCard key={c.id} candidate={c} />
+      {candidates.map((c, i) => (
+        <CandidateCard key={c.id} candidate={c} nextCandidateId={candidates[i + 1]?.id ?? null} />
       ))}
     </div>
   )

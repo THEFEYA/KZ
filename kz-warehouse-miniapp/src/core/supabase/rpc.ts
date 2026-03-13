@@ -3,6 +3,7 @@ import type {
   RpcQueueParams, RpcQueueRow, RpcQueueEnvelope,
   RpcDetailParams, RpcDetailRow,
   RpcAnalyticsParams, RpcAnalyticsRow,
+  RpcConfirmedLeadsEnvelope,
 } from '@core/types/rpc'
 
 export async function rpcQueue(params: RpcQueueParams): Promise<RpcQueueRow[]> {
@@ -69,4 +70,72 @@ export async function rpcAnalytics(params: RpcAnalyticsParams): Promise<RpcAnaly
     return (data as RpcAnalyticsRow[])[0] ?? null
   }
   return data as RpcAnalyticsRow
+}
+
+// ─── public.kz_confirmed_leads ──────────────────────────────────────────────
+// Separate function for confirmed leads — NOT kz_miniapp_queue_v2
+// Returns envelope: { ok, count, items }
+
+export async function rpcConfirmedLeads(
+  limit: number,
+): Promise<{ count: number; items: RpcQueueRow[] }> {
+  const { data, error } = await supabase.rpc('kz_confirmed_leads', {
+    p_limit: limit,
+  })
+  if (error) throw new Error(error.message)
+  if (!data) return { count: 0, items: [] }
+
+  // Handle envelope: { ok, count, items }
+  if (typeof data === 'object' && !Array.isArray(data)) {
+    const env = data as RpcConfirmedLeadsEnvelope
+    return {
+      count: env.count ?? 0,
+      items: Array.isArray(env.items) ? env.items : [],
+    }
+  }
+  // Fallback: plain array
+  if (Array.isArray(data)) {
+    return { count: data.length, items: data as RpcQueueRow[] }
+  }
+  return { count: 0, items: [] }
+}
+
+// ─── public.kz_assign_lead_to_manager_by_telegram ───────────────────────────
+// Assigns a lead/candidate to a manager via Telegram flow
+// Expected params: p_candidate_id uuid, p_telegram_user_id bigint
+
+export async function rpcAssignLeadToManager(
+  candidateId: string,
+  telegramUserId: number | null,
+): Promise<{ ok: boolean; message?: string }> {
+  const { data, error } = await supabase.rpc('kz_assign_lead_to_manager_by_telegram', {
+    p_candidate_id:    candidateId,
+    p_telegram_user_id: telegramUserId ?? 0,
+  })
+  if (error) throw new Error(error.message)
+  if (typeof data === 'object' && data !== null) {
+    const d = data as Record<string, unknown>
+    return { ok: d.ok !== false, message: d.message as string | undefined }
+  }
+  return { ok: true }
+}
+
+// ─── public.kz_queue_lead_handoff ───────────────────────────────────────────
+// Moves a candidate to the review/handoff queue
+// Expected params: p_candidate_id uuid, p_target_queue text
+
+export async function rpcQueueLeadHandoff(
+  candidateId: string,
+  targetQueue = 'review_queue',
+): Promise<{ ok: boolean; message?: string }> {
+  const { data, error } = await supabase.rpc('kz_queue_lead_handoff', {
+    p_candidate_id: candidateId,
+    p_target_queue: targetQueue,
+  })
+  if (error) throw new Error(error.message)
+  if (typeof data === 'object' && data !== null) {
+    const d = data as Record<string, unknown>
+    return { ok: d.ok !== false, message: d.message as string | undefined }
+  }
+  return { ok: true }
 }

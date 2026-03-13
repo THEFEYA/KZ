@@ -164,3 +164,12 @@ export interface RpcBreakdownItem {
   count?: number    // fallback alias
   pct?: number
 }
+
+// ─── public.kz_confirmed_leads ───────────────────────────────────────────────
+// Separate function for confirmed leads — NOT kz_miniapp_queue_v2
+// Returns: { ok, count, items }
+export interface RpcConfirmedLeadsEnvelope {
+  ok: boolean
+  count: number
+  items: RpcQueueRow[]  // same row shape as queue items
+}

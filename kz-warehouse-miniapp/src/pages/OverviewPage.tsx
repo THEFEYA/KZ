@@ -6,13 +6,24 @@ import { ModeRail } from '@features/overview/ModeRail'
 import { QueueEntryCards } from '@features/overview/QueueEntryCards'
 import { AnalyticsPreview } from '@features/overview/AnalyticsPreview'
 import { ActiveFiltersBar } from '@features/filters/ActiveFiltersBar'
-import { useAnalyticsQuery } from '@core/supabase/queries'
+import { useAnalyticsQuery, useConfirmedLeadsQuery } from '@core/supabase/queries'
 import { useFilters, useActiveMode } from '@core/state/selectors'
 
 export function OverviewPage() {
   const filters = useFilters()
   const mode = useActiveMode()
   const { data: analytics, isLoading, error } = useAnalyticsQuery(filters, mode)
+
+  // Get accurate confirmed leads count from the correct source
+  const { data: confirmedLeadsData } = useConfirmedLeadsQuery(5)
+
+  // Merge: override confirmedLeads in summary with value from kz_confirmed_leads
+  const mergedSummary = analytics?.summary
+    ? {
+        ...analytics.summary,
+        confirmedLeads: confirmedLeadsData?.count ?? analytics.summary.confirmedLeads,
+      }
+    : null
 
   return (
     <>
@@ -23,7 +34,7 @@ export function OverviewPage() {
           {/* Summary metrics strip */}
           <Section noPadding>
             <SummaryStrip
-              summary={analytics?.summary ?? null}
+              summary={mergedSummary}
               loading={isLoading}
             />
           </Section>
@@ -41,7 +52,7 @@ export function OverviewPage() {
 
           {/* Queue entry cards */}
           <Section title="Быстрый доступ" noPadding>
-            <QueueEntryCards summary={analytics?.summary ?? null} />
+            <QueueEntryCards summary={mergedSummary} />
           </Section>
 
           {/* Analytics mini-preview */}

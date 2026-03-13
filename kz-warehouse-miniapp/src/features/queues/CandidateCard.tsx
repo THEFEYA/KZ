@@ -7,9 +7,10 @@ import { plural } from '@core/utils/format'
 
 interface CandidateCardProps {
   candidate: Candidate
+  nextCandidateId?: string | null
 }
 
-export function CandidateCard({ candidate: c }: CandidateCardProps) {
+export function CandidateCard({ candidate: c, nextCandidateId }: CandidateCardProps) {
   const navigate = useNavigate()
 
   const handleCardClick = () => {
@@ -134,10 +135,10 @@ export function CandidateCard({ candidate: c }: CandidateCardProps) {
           icon="→"
           onClick={(e) => {
             e.stopPropagation()
-            // navigate to next card — handled by parent list scroll; tap navigates forward
             hapticLight()
-            navigate(buildDetailRoute(c.id))
+            if (nextCandidateId) navigate(buildDetailRoute(nextCandidateId))
           }}
+          disabled={!nextCandidateId}
         />
       </div>
     </div>
@@ -145,16 +146,18 @@ export function CandidateCard({ candidate: c }: CandidateCardProps) {
 }
 
 function CardAction({
-  label, icon, onClick, accent,
+  label, icon, onClick, accent, disabled,
 }: {
   label: string
   icon: string
   onClick: (e: React.MouseEvent) => void
   accent?: boolean
+  disabled?: boolean
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       style={{
         flex: 1,
         display: 'flex',
@@ -165,10 +168,11 @@ function CardAction({
         background: 'transparent',
         border: 'none',
         borderRight: '1px solid var(--color-border)',
-        color: accent ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
+        color: disabled ? 'var(--color-text-tertiary)' : accent ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
+        opacity: disabled ? 0.35 : 1,
         fontSize: 'var(--text-xs)',
         fontWeight: 'var(--fw-medium)',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'background var(--transition-fast)',
       }}
     >

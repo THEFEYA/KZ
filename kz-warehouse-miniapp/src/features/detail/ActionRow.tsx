@@ -1,5 +1,5 @@
 import type { CandidateDetail } from '@core/types/candidate'
-import { openContact, openSource, forwardToManager, markNeedsReview } from '@core/telegram/actions'
+import { openContactOrWebsite, openSource, forwardToManager, markNeedsReview } from '@core/telegram/actions'
 import { useNavigate } from 'react-router-dom'
 import { hapticLight } from '@core/telegram/haptics'
 
@@ -30,7 +30,7 @@ export function ActionRow({ detail }: ActionRowProps) {
       color: 'var(--color-direct-contact)',
       disabled: !hasContact,
       onClick: () => {
-        if (detail.contacts?.length) openContact(detail.contacts)
+        openContactOrWebsite(detail.contacts ?? null, null)
       },
     },
     {

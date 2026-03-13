@@ -1,29 +1,40 @@
 // Action adapter layer — entry points for operational actions
-// Wire to real Telegram bot flow or backend mutations when available
 
-import { hapticLight, hapticSuccess } from './haptics'
+import { hapticLight, hapticSuccess, hapticError } from './haptics'
 import { getTgApp } from './init'
-import type { Candidate, CandidateDetail, ContactInfo } from '@core/types/candidate'
+import { rpcAssignLeadToManager, rpcQueueLeadHandoff } from '@core/supabase/rpc'
+import type { Candidate, ContactInfo } from '@core/types/candidate'
 
-/** Open first available contact channel */
-export function openContact(contacts: ContactInfo[]): boolean {
-  const first = contacts.find(c => c.phone || c.telegram || c.email)
-  if (!first) return false
-  hapticLight()
-  if (first.telegram) {
-    const handle = first.telegram.replace('@', '')
-    window.open(`https://t.me/${handle}`, '_blank')
-    return true
+/** Open first available contact channel, falling back to company website */
+export function openContactOrWebsite(contacts: ContactInfo[] | null, companyWebsite: string | null): boolean {
+  const first = contacts?.find(c => c.phone || c.telegram || c.email)
+  if (first) {
+    hapticLight()
+    if (first.telegram) {
+      const handle = first.telegram.replace('@', '')
+      window.open(`https://t.me/${handle}`, '_blank')
+      return true
+    }
+    if (first.phone) {
+      window.open(`tel:${first.phone}`, '_self')
+      return true
+    }
+    if (first.email) {
+      window.open(`mailto:${first.email}`, '_self')
+      return true
+    }
   }
-  if (first.phone) {
-    window.open(`tel:${first.phone}`, '_self')
-    return true
-  }
-  if (first.email) {
-    window.open(`mailto:${first.email}`, '_self')
+  if (companyWebsite) {
+    hapticLight()
+    window.open(companyWebsite, '_blank')
     return true
   }
   return false
+}
+
+/** Open first available contact channel (legacy — use openContactOrWebsite when company_website available) */
+export function openContact(contacts: ContactInfo[]): boolean {
+  return openContactOrWebsite(contacts, null)
 }
 
 /** Open the candidate's primary source URL */
@@ -34,36 +45,47 @@ export function openSource(candidate: Pick<Candidate, 'sourceUrl' | 'sourceLabel
   return true
 }
 
-/** Forward candidate to manager via Telegram share
- *  TODO: replace with real bot deep-link when available */
+/** Forward candidate to manager via kz_assign_lead_to_manager_by_telegram */
 export function forwardToManager(candidate: Candidate): void {
-  hapticSuccess()
   const tg = getTgApp()
-  const text = `KZ Warehouse — кандидат: ${candidate.displayEntity}\nСигнал: ${candidate.normalizedSignalType}\nРегион: ${candidate.region ?? '—'}`
-  if (tg) {
-    // Use Telegram share if bot deep-link is configured
-    // tg.sendData(JSON.stringify({ action: 'forward', candidate_id: candidate.id }))
-    tg.showPopup({
-      title: 'Передать менеджеру',
-      message: `${candidate.displayEntity} — будет передано менеджеру через бот (функция в разработке).`,
-      buttons: [{ id: 'ok', type: 'ok' }],
+  const telegramUserId = tg?.initDataUnsafe?.user?.id ?? null
+  rpcAssignLeadToManager(candidate.id, telegramUserId)
+    .then((result) => {
+      hapticSuccess()
+      tg?.showPopup({
+        title: 'Передано менеджеру',
+        message: result.message ?? `${candidate.displayEntity} — передано менеджеру.`,
+        buttons: [{ id: 'ok', type: 'ok' }],
+      })
     })
-  } else {
-    const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(text)}`
-    window.open(shareUrl, '_blank')
-  }
+    .catch((err: Error) => {
+      hapticError()
+      tg?.showPopup({
+        title: 'Ошибка',
+        message: `Не удалось передать: ${err.message}`,
+        buttons: [{ id: 'ok', type: 'ok' }],
+      })
+    })
 }
 
-/** Mark candidate as needing review
- *  TODO: wire to backend mutation RPC when available */
+/** Move candidate to review queue via kz_queue_lead_handoff */
 export function markNeedsReview(candidate: Candidate): void {
-  hapticLight()
   const tg = getTgApp()
-  if (tg) {
-    tg.showPopup({
-      title: 'Нужна проверка',
-      message: `${candidate.displayEntity} — будет отправлен в очередь проверки (функция в разработке).`,
-      buttons: [{ id: 'ok', type: 'ok' }],
+  rpcQueueLeadHandoff(candidate.id, 'review_queue')
+    .then((result) => {
+      hapticSuccess()
+      tg?.showPopup({
+        title: 'Отправлено на проверку',
+        message: result.message ?? `${candidate.displayEntity} — отправлен в очередь проверки.`,
+        buttons: [{ id: 'ok', type: 'ok' }],
+      })
     })
-  }
+    .catch((err: Error) => {
+      hapticError()
+      tg?.showPopup({
+        title: 'Ошибка',
+        message: `Не удалось отправить: ${err.message}`,
+        buttons: [{ id: 'ok', type: 'ok' }],
+      })
+    })
 }
