@@ -18,10 +18,16 @@ interface ActionBtn {
 export function ActionRow({ detail }: ActionRowProps) {
   const navigate = useNavigate()
 
-  const hasContact = !!(detail.contacts?.length)
-  const hasSource  = !!(detail.sourceUrl || detail.sourceLinks?.[0]?.url)
+  // Derive fallback URLs from sourceLinks (populated by mapper from proof_url / company_website)
+  const websiteUrl = detail.sourceLinks?.find(l => l.label === 'Сайт компании')?.url ?? null
+  const proofUrl   = detail.sourceLinks?.find(l => l.label === 'Доказательство')?.url ?? null
 
-  const sourceUrl = detail.sourceUrl ?? detail.sourceLinks?.[0]?.url ?? null
+  // "Связаться" is available if any contact channel or fallback URL exists
+  const hasContact = !!(detail.contacts?.length || websiteUrl || proofUrl)
+  const hasSource  = !!(proofUrl || detail.sourceUrl || detail.sourceLinks?.[0]?.url)
+
+  // "Источник" prefers proof_url over source_url
+  const sourceUrl = proofUrl ?? detail.sourceUrl ?? detail.sourceLinks?.find(l => l.label !== 'Сайт компании')?.url ?? null
 
   const actions: ActionBtn[] = [
     {
@@ -30,7 +36,7 @@ export function ActionRow({ detail }: ActionRowProps) {
       color: 'var(--color-direct-contact)',
       disabled: !hasContact,
       onClick: () => {
-        openContactOrWebsite(detail.contacts ?? null, null)
+        openContactOrWebsite(detail.contacts ?? null, websiteUrl ?? proofUrl ?? null)
       },
     },
     {

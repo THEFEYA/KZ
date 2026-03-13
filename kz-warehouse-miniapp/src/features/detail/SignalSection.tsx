@@ -3,6 +3,7 @@ import { Section } from '@shared/ui/Section'
 import { Panel } from '@shared/ui/Panel'
 import { Chip } from '@shared/ui/Chip'
 import type { CandidateDetail } from '@core/types/candidate'
+import { labelQueueBucket } from '@core/utils/labels'
 
 interface SignalSectionProps {
   detail: CandidateDetail
@@ -46,6 +47,10 @@ export function SignalSection({ detail }: SignalSectionProps) {
               </span>
             </Field>
           )}
+
+          <Field label="Очередь">
+            <Chip variant="default" size="sm">{labelQueueBucket(detail.queueBucket)}</Chip>
+          </Field>
         </div>
       </Panel>
     </Section>

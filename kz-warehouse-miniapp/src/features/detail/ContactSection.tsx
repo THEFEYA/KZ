@@ -9,9 +9,16 @@ interface ContactSectionProps {
 }
 
 export function ContactSection({ detail }: ContactSectionProps) {
-  const hasContacts = detail.contacts && detail.contacts.length > 0
-  const hasPath = detail.contactPath && detail.contactPath.length > 0
-  const noContact = !hasContacts && !hasPath
+  const hasContacts = !!(detail.contacts && detail.contacts.length > 0)
+  const hasPath = !!(detail.contactPath && detail.contactPath.length > 0)
+
+  // Fallback URLs for 'path' state when no explicit contactPath[] steps exist
+  const websiteUrl  = detail.sourceLinks?.find(l => l.label === 'Сайт компании')?.url ?? null
+  const proofUrl    = detail.sourceLinks?.find(l => l.label === 'Доказательство')?.url ?? null
+  const fallbackUrl = websiteUrl ?? proofUrl ?? null
+
+  // Only show "not found" panel when status is explicitly none
+  const noContact = detail.contactStatus === 'none' && !hasContacts && !hasPath
 
   return (
     <Section
@@ -55,6 +62,37 @@ export function ContactSection({ detail }: ContactSectionProps) {
               {detail.contactPath!.map((step) => (
                 <PathStep key={step.step} step={step} />
               ))}
+            </Panel>
+          )}
+          {!hasContacts && !hasPath && detail.contactStatus === 'path' && (
+            <Panel>
+              <div
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 'var(--fw-semibold)',
+                  color: 'var(--color-path-contact)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  marginBottom: 8,
+                }}
+              >
+                Есть путь связи
+              </div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--lh-relaxed)', marginBottom: fallbackUrl ? 10 : 0 }}>
+                Прямого контакта нет, но по источнику или сайту компании можно выйти на нужного человека.
+              </p>
+              {fallbackUrl && (
+                <LinkAction href={fallbackUrl} icon="↗">
+                  {websiteUrl ? 'Сайт компании' : 'Доказательство / источник'}
+                </LinkAction>
+              )}
+            </Panel>
+          )}
+          {!hasContacts && !hasPath && detail.contactStatus === 'direct' && (
+            <Panel>
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>
+                Данные о контакте уточняются
+              </span>
             </Panel>
           )}
         </div>
