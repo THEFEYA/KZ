@@ -67,6 +67,11 @@ export function QueueTabs({ active, onChange, counts }: QueueTabsProps) {
                 {count}
               </span>
             )}
+            {tab.bucket === 'confirmed_leads' && (
+              <span style={{ fontSize: 9, color: 'var(--color-text-tertiary)', opacity: 0.65, lineHeight: 1 }}>
+                всего
+              </span>
+            )}
             {isActive && (
               <div
                 style={{

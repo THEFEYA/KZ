@@ -59,7 +59,7 @@ export function AnalyticsPage() {
                 { label: 'Всего', value: analytics.summary.total },
                 { label: 'Рабочая', value: analytics.summary.actionQueue, color: 'var(--color-action)' },
                 { label: 'Проверка', value: analytics.summary.reviewQueue, color: 'var(--color-review)' },
-                { label: 'Подтверждённые', value: confirmedLeadsData?.count ?? analytics.summary.confirmedLeads, color: 'var(--color-confirmed)' },
+                { label: 'Подтверждённые', value: confirmedLeadsData?.count ?? analytics.summary.confirmedLeads, color: 'var(--color-confirmed)', subtitle: 'всего' },
               ].map((m) => (
                 <div
                   key={m.label}
@@ -85,6 +85,11 @@ export function AnalyticsPage() {
                   <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', marginTop: 2 }}>
                     {m.label}
                   </div>
+                  {'subtitle' in m && m.subtitle && (
+                    <div style={{ fontSize: 9, color: 'var(--color-text-tertiary)', marginTop: 1, opacity: 0.7 }}>
+                      {m.subtitle}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

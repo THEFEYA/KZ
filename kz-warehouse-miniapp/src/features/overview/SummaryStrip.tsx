@@ -48,6 +48,7 @@ export function SummaryStrip({ summary, loading }: SummaryStripProps) {
       label: 'Подтверждённые',
       value: summary.confirmedLeads,
       color: 'var(--color-confirmed)',
+      subtitle: 'всего',
       onClick: () => navigate('/queues'),
     },
     {
