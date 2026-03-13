@@ -1,37 +1,46 @@
-// Raw RPC response types — exact contract from Supabase
+// Raw RPC types — aligned to real Supabase function signatures
 
+// ─── kz_miniapp_queue_v2 ────────────────────────────────────────────────────
+// Overload 1: (p_bucket, p_region, p_market_role, p_heat_label_ru,
+//              p_freshness_label_ru, p_has_contact, p_limit, p_offset)
+// Overload 2: adds p_contact_path_status_v2
+// NOT supported: p_tier, p_role, p_heat, p_freshness, p_contact_type
 export interface RpcQueueParams {
-  p_bucket?: string        // 'action_queue' | 'review_queue' | 'confirmed_leads'
-  p_region?: string        // 'Алматы' | 'Астана' | ...
-  p_heat?: string          // 'hot' | 'warm' | 'cold'
-  p_freshness?: string     // 'fresh' | 'actual' | 'stale'
-  p_role?: string          // buyer/seller role
-  p_contact_type?: string  // 'direct' | 'path' | 'none'
-  p_limit?: number
-  p_tier?: string          // 'tier_1' | 'tier_2' | 'all_active'
+  p_bucket: string | null              // 'action_queue' | 'review_queue' | 'confirmed_leads'
+  p_region: string | null              // 'Алматы' | 'Астана' | ...
+  p_market_role: string | null         // role label
+  p_heat_label_ru: string | null       // 'Горячий' | 'Тёплый' | 'Холодный'
+  p_freshness_label_ru: string | null  // 'Свежий' | 'Актуальный' | 'Устаревший'
+  p_has_contact: boolean | null        // true = direct only, false = no direct, null = any
+  p_contact_path_status_v2: string | null
+  p_limit: number
+  p_offset: number
 }
 
 export interface RpcQueueRow {
   candidate_id: string
   display_entity: string
-  entity_type: string        // 'company' | 'object'
-  market_role: string        // raw code
+  entity_type: string
+  market_role: string
   normalized_signal_type: string
   object_anchor: string | null
   region: string | null
   source_label: string | null
   evidence_count: number
   priority_rank: number
-  contact_status: string     // 'direct_contact_found' | 'indirect_contact_path_found' | 'no_contact_found'
-  heat_label: string         // 'hot' | 'warm' | 'cold' or ru label
+  contact_status: string
+  heat_label: string
   freshness_label: string
   queue_bucket: string
   demand_hint: string | null
   quality_score: number | null
 }
 
+// ─── kz_miniapp_record_detail_v1 ────────────────────────────────────────────
+// (p_candidate_id uuid, p_lead_id uuid)
 export interface RpcDetailParams {
   p_candidate_id: string
+  p_lead_id: string | null
 }
 
 export interface RpcDetailRow {
@@ -81,12 +90,19 @@ export interface RpcSourceLink {
   url: string
 }
 
+// ─── kz_miniapp_analytics_v2 ────────────────────────────────────────────────
+// Overload 1: (p_region, p_bucket, p_market_role, p_heat_label_ru,
+//              p_freshness_label_ru, p_has_contact)
+// Overload 2: adds p_contact_path_status_v2
+// NOT supported: p_limit, p_offset, p_tier
 export interface RpcAnalyticsParams {
-  p_region?: string
-  p_tier?: string
-  p_heat?: string
-  p_freshness?: string
-  p_limit?: number
+  p_region: string | null
+  p_bucket: string | null
+  p_market_role: string | null
+  p_heat_label_ru: string | null
+  p_freshness_label_ru: string | null
+  p_has_contact: boolean | null
+  p_contact_path_status_v2: string | null
 }
 
 export interface RpcAnalyticsRow {
