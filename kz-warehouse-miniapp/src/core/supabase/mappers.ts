@@ -339,11 +339,11 @@ export function mapAnalyticsRow(row: RpcAnalyticsRow): AnalyticsData {
       reviewCount:   pp.review     ?? 0,
       topCandidate: (pp.top_candidate && pp.top_candidate.candidate_id) ? {
         id:               pp.top_candidate.candidate_id,
-        displayLabel:     pp.top_candidate.display_label_v2,
-        signalType:       pp.top_candidate.signal_type        ?? null,
-        objectAnchor:     pp.top_candidate.object_anchor_label_v2 ?? null,
-        priorityBandRu:   pp.top_candidate.priority?.priority_band_ru    ?? null,
-        openFirstReasonRu:pp.top_candidate.priority?.open_first_reason_ru ?? null,
+        displayLabel:     toInsightStr(pp.top_candidate.display_label_v2) ?? String(pp.top_candidate.display_label_v2 ?? ''),
+        signalType:       toInsightStr(pp.top_candidate.signal_type),
+        objectAnchor:     toInsightStr(pp.top_candidate.object_anchor_label_v2),
+        priorityBandRu:   toInsightStr(pp.top_candidate.priority?.priority_band_ru),
+        openFirstReasonRu:toInsightStr(pp.top_candidate.priority?.open_first_reason_ru),
       } : null,
     }
   }
@@ -394,11 +394,11 @@ export function mapOverviewScreen(
       reviewCount:   pp.review     ?? 0,
       topCandidate: (pp.top_candidate && pp.top_candidate.candidate_id) ? {
         id:               pp.top_candidate.candidate_id,
-        displayLabel:     pp.top_candidate.display_label_v2,
-        signalType:       pp.top_candidate.signal_type ?? null,
-        objectAnchor:     pp.top_candidate.object_anchor_label_v2 ?? null,
-        priorityBandRu:   pp.top_candidate.priority?.priority_band_ru    ?? null,
-        openFirstReasonRu:pp.top_candidate.priority?.open_first_reason_ru ?? null,
+        displayLabel:     toInsightStr(pp.top_candidate.display_label_v2) ?? String(pp.top_candidate.display_label_v2 ?? ''),
+        signalType:       toInsightStr(pp.top_candidate.signal_type),
+        objectAnchor:     toInsightStr(pp.top_candidate.object_anchor_label_v2),
+        priorityBandRu:   toInsightStr(pp.top_candidate.priority?.priority_band_ru),
+        openFirstReasonRu:toInsightStr(pp.top_candidate.priority?.open_first_reason_ru),
       } : null,
     } : analyticsData?.priorityPreview ?? null
 
