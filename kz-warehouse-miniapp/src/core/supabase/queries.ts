@@ -216,17 +216,21 @@ export function useOverviewQuery(filters: ActiveFilters, mode: ModePreset | null
           offset: 0,
         })
         if (envelope.data) {
-          const rawData = envelope.data as Record<string, unknown>
-          // Runtime returns flat structure: summary_strip/priority_preview/main_insight at top level.
-          // rawData.screen is only metadata (type/title/mode), NOT the actual screen data.
-          // Prefer rawData.screen only if it contains the actual data fields.
-          const screenCandidate = rawData.screen as Record<string, unknown> | undefined
-          const screenRaw = (screenCandidate?.summary_strip || screenCandidate?.priority_preview)
-            ? screenCandidate as Record<string, unknown>
-            : rawData as Record<string, unknown>
+          // Edge Function callRpc does NOT unwrap SETOF — data may be an array
+          const unwrapped = (Array.isArray(envelope.data) ? envelope.data[0] : envelope.data) as Record<string, unknown>
+          if (!unwrapped) {
+            console.warn('[overview] runtime returned empty array — falling back')
+          } else {
+          const rawData = unwrapped
           const screen = {
-            ok: screenRaw.ok !== false && !!(screenRaw.summary_strip || screenRaw.priority_preview),
-            ...screenRaw,
+            ok: true,
+            summary_strip: rawData.summary_strip ?? null,
+            priority_preview: rawData.priority_preview ?? null,
+            main_insight: rawData.main_insight ?? null,
+            active_mode_label_ru: rawData.active_mode_label_ru ?? null,
+            analytics_preview: rawData.analytics_preview ?? null,
+            quick_entries: rawData.quick_entries ?? null,
+            available_modes: rawData.available_modes ?? null,
           } as Parameters<typeof mapOverviewScreen>[0]
           const overviewData = mapOverviewScreen(screen, null)
           // Use analytics_preview embedded in the overview response if available (avoids extra request)
@@ -241,8 +245,9 @@ export function useOverviewQuery(filters: ActiveFilters, mode: ModePreset | null
             }
           } catch { /* optional */ }
           return { overviewData, analyticsData, source: 'runtime' as RuntimeSource }
+          } // end else (unwrapped is not null)
         }
-        console.warn('[overview] runtime returned ok:true but data is null — falling back')
+        console.warn('[overview] runtime returned ok:true but data is null/empty — falling back')
       } catch (e) {
         console.warn('[overview] runtime failed, using legacy fallback:', e)
       }
