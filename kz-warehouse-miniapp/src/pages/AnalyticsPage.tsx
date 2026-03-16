@@ -18,6 +18,7 @@ import { EmptyState } from '@shared/ui/EmptyState'
 import { buildDetailRoute } from '@core/config/routes'
 import { useAnalyticsQuery, useConfirmedLeadsQuery } from '@core/supabase/queries'
 import { useFilters, useActiveMode } from '@core/state/selectors'
+import { SourceBadge } from '@shared/ui/SourceBadge'
 import type { AnalyticsViewType, AnalyticsSlice } from '@core/types/analytics'
 
 export function AnalyticsPage() {
@@ -27,8 +28,11 @@ export function AnalyticsPage() {
   const navigate = useNavigate()
   const filters = useFilters()
   const mode = useActiveMode()
-  const { data: analytics, isLoading, error, refetch } = useAnalyticsQuery(filters, mode)
+  const { data: analyticsResult, isLoading, error, refetch } = useAnalyticsQuery(filters, mode)
   const { data: confirmedLeadsData } = useConfirmedLeadsQuery(1)
+
+  const analytics = analyticsResult?.analytics ?? null
+  const source    = analyticsResult?.source    ?? null
 
   const confirmedCount = confirmedLeadsData?.count ?? analytics?.summary.confirmedLeads ?? 0
   const withContact = analytics?.summary.withContact
@@ -57,9 +61,12 @@ export function AnalyticsPage() {
           paddingTop: 'var(--space-4)',
         }}
       >
-        {/* [DEBUG] ANALYTICS V2 marker */}
-        <div style={{ margin: '0 var(--space-4)', padding: '4px 10px', background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.08em' }}>
-          [ANALYTICS V2]
+        {/* [DEBUG] ANALYTICS V2 + source marker */}
+        <div style={{ display: 'flex', gap: 6, margin: '0 var(--space-4)' }}>
+          <span style={{ padding: '3px 9px', background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: 5, fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.08em' }}>
+            [ANALYTICS V2]
+          </span>
+          {source && <SourceBadge source={source} />}
         </div>
 
         {/* 1. Summary */}

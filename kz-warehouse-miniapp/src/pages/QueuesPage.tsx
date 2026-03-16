@@ -4,6 +4,7 @@ import { QueueTabs } from '@features/queues/QueueTabs'
 import { QueueToolbar } from '@features/queues/QueueToolbar'
 import { QueueList } from '@features/queues/QueueList'
 import { ActiveFiltersBar } from '@features/filters/ActiveFiltersBar'
+import { SourceBadge } from '@shared/ui/SourceBadge'
 import { useQueueQuery, useAnalyticsQuery, useConfirmedLeadsQuery } from '@core/supabase/queries'
 import { useFilters, useActiveMode } from '@core/state/selectors'
 import type { QueueBucket } from '@core/types/candidate'
@@ -15,10 +16,10 @@ export function QueuesPage() {
 
   const isConfirmedTab = activeBucket === 'confirmed_leads'
 
-  // action_queue + review_queue → kz_miniapp_queue_v2
-  // confirmed tab is disabled here — served by useConfirmedLeadsQuery below
+  // Primary: runtime action "queue" (with priority+card_reason)
+  // Fallback: kz_miniapp_queue_v2
   const {
-    data: queueCandidates = [],
+    data: queueData,
     isLoading: queueLoading,
     error: queueError,
     refetch: queueRefetch,
@@ -26,11 +27,9 @@ export function QueuesPage() {
     isConfirmedTab ? 'action_queue' : activeBucket,
     filters,
     mode,
-    !isConfirmedTab,  // disabled when on confirmed tab
+    !isConfirmedTab,
   )
 
-  // Confirmed leads → public.kz_confirmed_leads (NOT kz_miniapp_queue_v2)
-  // kz_confirmed_leads returns { ok, count=3, items=[...] }
   const {
     data: confirmedLeadsData,
     isLoading: confirmedLoading,
@@ -38,15 +37,15 @@ export function QueuesPage() {
     refetch: confirmedRefetch,
   } = useConfirmedLeadsQuery(filters.limit || 10)
 
-  const { data: analytics } = useAnalyticsQuery(filters, mode)
+  const { data: analyticsData } = useAnalyticsQuery(filters, mode)
+  const analytics = analyticsData?.analytics ?? null
 
-  // Active tab data
-  const candidates = isConfirmedTab ? (confirmedLeadsData?.items ?? []) : queueCandidates
-  const isLoading  = isConfirmedTab ? confirmedLoading  : queueLoading
-  const error      = isConfirmedTab ? confirmedError    : queueError
-  const refetch    = isConfirmedTab ? confirmedRefetch  : queueRefetch
+  const candidates  = isConfirmedTab ? (confirmedLeadsData?.items ?? []) : (queueData?.items ?? [])
+  const isLoading   = isConfirmedTab ? confirmedLoading : queueLoading
+  const error       = isConfirmedTab ? confirmedError   : queueError
+  const refetch     = isConfirmedTab ? confirmedRefetch : queueRefetch
+  const source      = isConfirmedTab ? null : (queueData?.source ?? null)
 
-  // Tab badge counts — confirmed from kz_confirmed_leads.count, not analytics
   const counts: Partial<Record<QueueBucket, number>> = {
     action_queue:    analytics?.summary.actionQueue,
     review_queue:    analytics?.summary.reviewQueue,
@@ -58,6 +57,15 @@ export function QueuesPage() {
       <QueueTabs active={activeBucket} onChange={setActiveBucket} counts={counts} />
       <ActiveFiltersBar />
       <QueueToolbar candidates={candidates} total={candidates.length} />
+
+      {/* [DEBUG] QUEUE V2 + source marker */}
+      <div style={{ display: 'flex', gap: 6, padding: '6px var(--space-4) 0' }}>
+        <span style={{ padding: '3px 9px', background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: 5, fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.08em' }}>
+          [QUEUE V2]
+        </span>
+        {source && <SourceBadge source={source} />}
+      </div>
+
       <Page>
         <div style={{ padding: '0 var(--space-4)', paddingBottom: 'var(--space-4)' }}>
           <QueueList

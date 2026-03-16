@@ -10,17 +10,23 @@ import { QualitySection } from '@features/detail/QualitySection'
 import { ContactSection } from '@features/detail/ContactSection'
 import { EvidenceSection } from '@features/detail/EvidenceSection'
 import { SourceLinksSection } from '@features/detail/SourceLinksSection'
+import { SourceBadge } from '@shared/ui/SourceBadge'
 import { CardSkeleton } from '@shared/ui/Skeleton'
 import { ErrorState } from '@shared/ui/ErrorState'
 import { EmptyState } from '@shared/ui/EmptyState'
 import { useDetailQuery } from '@core/supabase/queries'
+import { useActiveModeId } from '@core/state/selectors'
 import { showBackButton } from '@core/telegram/buttons'
 
 export function DetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const modeId = useActiveModeId()
 
-  const { data: detail, isLoading, error, refetch } = useDetailQuery(id ?? null)
+  // Pass active mode to runtime so it can provide mode-aware context
+  const { data, isLoading, error, refetch } = useDetailQuery(id ?? null, modeId)
+  const detail = data?.detail ?? null
+  const source = data?.source ?? null
 
   useEffect(() => {
     return showBackButton(() => navigate(-1))
@@ -30,9 +36,7 @@ export function DetailPage() {
     return (
       <Page>
         <div style={{ padding: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <CardSkeleton />
-          <CardSkeleton />
-          <CardSkeleton />
+          <CardSkeleton /><CardSkeleton /><CardSkeleton />
         </div>
       </Page>
     )
@@ -41,100 +45,64 @@ export function DetailPage() {
   if (error) {
     return (
       <Page>
-        <ErrorState
-          title="Не удалось загрузить детали"
-          message={(error as Error).message}
-          onRetry={() => refetch()}
-        />
+        <ErrorState title="Не удалось загрузить детали" message={(error as Error).message} onRetry={() => refetch()} />
       </Page>
     )
   }
 
   if (!detail) {
-    return (
-      <Page>
-        <EmptyState icon="◌" title="Запись не найдена" />
-      </Page>
-    )
+    return <Page><EmptyState icon="◌" title="Запись не найдена" /></Page>
   }
 
   return (
     <Page>
       <div className="animate-fade-in-up" style={{ paddingTop: 'var(--space-2)' }}>
-        {/* Header: name, entity type, region, heat, freshness */}
         <DetailHeader detail={detail} />
-
-        {/* Action buttons: contact, source, manager, review */}
         <ActionRow detail={detail} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingTop: 'var(--space-3)' }}>
 
-          {/* [DEBUG] DETAIL V2 marker */}
-          <div style={{ margin: '0 var(--space-4) var(--space-2)', padding: '4px 10px', background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.08em' }}>
-            [DETAIL V2]
+          {/* [DEBUG] DETAIL V2 + source marker */}
+          <div style={{ display: 'flex', gap: 6, margin: '0 var(--space-4) var(--space-2)' }}>
+            <span style={{ padding: '3px 9px', background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: 5, fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.08em' }}>
+              [DETAIL V2]
+            </span>
+            {source && <SourceBadge source={source} />}
           </div>
 
-          {/* 1. Priority banner — open_first_reason + priority_band + score */}
+          {/* 1. Priority banner */}
           {detail.priority && (
             <div style={{ paddingBottom: 'var(--space-3)' }}>
               <PriorityBanner priority={detail.priority} />
             </div>
           )}
 
-          {/* 2. Explanation — why this record is important */}
-          {detail.explanation && (
-            <ExplanationBlock explanation={detail.explanation} />
-          )}
+          {/* 2. Explanation */}
+          {detail.explanation && <ExplanationBlock explanation={detail.explanation} />}
 
-          {/* 3. Signal — signal_type, object_anchor, demand_hint, source */}
+          {/* 3. Signal */}
           <SignalSection detail={detail} />
 
-          {/* 4. Quality — score, heat, freshness, evidence count */}
+          {/* 4. Quality */}
           <QualitySection detail={detail} />
 
-          {/* 5. Contact / Path block */}
+          {/* 5. Contact / Path */}
           <ContactSection detail={detail} />
 
           {/* 6. Evidence */}
-          <EvidenceSection
-            evidences={detail.evidences}
-            evidenceShort={detail.evidenceShort}
-            evidenceFull={detail.evidenceFull}
-          />
+          <EvidenceSection evidences={detail.evidences} evidenceShort={detail.evidenceShort} evidenceFull={detail.evidenceFull} />
 
-          {/* Source links (proof_url, company_website) */}
+          {/* Source links */}
           <SourceLinksSection links={detail.sourceLinks} />
 
-          {/* 7. Active lead alert — only when not null */}
+          {/* 7. Active lead alert — only if not null */}
           {detail.leadStatusRu && (
-            <div
-              style={{
-                margin: 'var(--space-3) var(--space-4) 0',
-                padding: 'var(--space-3)',
-                background: 'rgba(59,130,246,0.08)',
-                border: '1px solid rgba(59,130,246,0.2)',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                gap: 8,
-                alignItems: 'center',
-              }}
-            >
+            <div style={{ margin: 'var(--space-3) var(--space-4) 0', padding: 'var(--space-3)', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 'var(--radius-md)', display: 'flex', gap: 8, alignItems: 'center' }}>
               <span style={{ fontSize: 13 }}>✦</span>
               <div>
-                <span
-                  style={{
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 'var(--fw-semibold)',
-                    color: 'rgba(59,130,246,0.9)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  Активный лид
-                </span>
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--fw-semibold)', color: 'rgba(59,130,246,0.9)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Активный лид</span>
                 <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                  {detail.leadStatusRu}
-                  {detail.leadScore != null && ` · Оценка: ${detail.leadScore}`}
+                  {detail.leadStatusRu}{detail.leadScore != null && ` · Оценка: ${detail.leadScore}`}
                 </p>
               </div>
             </div>
