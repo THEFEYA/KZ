@@ -215,7 +215,8 @@ export function mapOpenCandidateResult(raw: RpcOpenCandidateResult): CandidateDe
     const dupArr = Array.isArray(dd.related_duplicates) ? dd.related_duplicates as unknown[] : null
 
     detailRow = {
-      candidate_id:             (h.candidate_id  ?? '') as string,
+      // candidate_id may be at the top level of the detail object (not inside header)
+      candidate_id:             (h.candidate_id  ?? raw.candidate_id ?? '') as string,
       display_label_v2:         (h.display_label_v2 ?? '') as string,
       entity_type_ru:           (h.entity_type_ru   ?? '') as string,
       market_role_label_ru:     (h.market_role_label_ru ?? '') as string,

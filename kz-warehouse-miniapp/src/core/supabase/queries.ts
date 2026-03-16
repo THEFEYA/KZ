@@ -88,9 +88,17 @@ export function useQueueQuery(
         })
         const data = envelope.data as Record<string, unknown> | null
         if (data) {
-          const rawItems = (Array.isArray(data) ? data : (data.items ?? [])) as RpcQueueScreenRow[]
+          // Runtime wraps queue as { queue: { items: [...] }, ... }
+          // Fallback: flat array or { items: [...] }
+          const queueBlock = data.queue as Record<string, unknown> | null
+          const rawItems = (
+            Array.isArray(data)                    ? data :
+            Array.isArray(queueBlock?.items)       ? queueBlock!.items as RpcQueueScreenRow[] :
+            (data.items ?? [])
+          ) as RpcQueueScreenRow[]
           return { items: rawItems.map(mapQueueRow), source: 'runtime' }
         }
+        console.warn('[queue] runtime returned ok:true but data is null — falling back')
       } catch (e) {
         console.warn('[queue] runtime failed, using legacy fallback:', e)
       }
@@ -124,9 +132,14 @@ export function useDetailQuery(candidateId: string | null, activeModeId?: string
           activeModeOffset:0,
         })
         if (envelope.data) {
-          const result = mapOpenCandidateResult(envelope.data as Parameters<typeof mapOpenCandidateResult>[0])
+          // Runtime wraps result as { ok, sync, detail, screen, workspace_context }
+          // The actual candidate payload is at envelope.data.detail
+          const rawEnvData = envelope.data as Record<string, unknown>
+          const detailPayload = (rawEnvData.detail ?? rawEnvData) as Parameters<typeof mapOpenCandidateResult>[0]
+          const result = mapOpenCandidateResult(detailPayload)
           return { detail: result, source: 'runtime' as RuntimeSource }
         }
+        console.warn('[detail] runtime returned ok:true but data is null — falling back')
       } catch (e) {
         console.warn('[detail] runtime failed, using legacy fallback:', e)
       }
@@ -164,9 +177,13 @@ export function useAnalyticsQuery(filters: ActiveFilters, mode: ModePreset | nul
       try {
         const envelope = await runtimeAnalytics({ activeModeCode: mode?.id ?? null })
         if (envelope.data) {
-          const mapped = mapAnalyticsRow(envelope.data as Parameters<typeof mapAnalyticsRow>[0])
+          const rawData = envelope.data as Record<string, unknown>
+          // Runtime may wrap as { ok, sync, analytics: {...} } or flat { ok, summary, charts }
+          const analyticsPayload = (rawData.analytics ?? rawData) as Parameters<typeof mapAnalyticsRow>[0]
+          const mapped = mapAnalyticsRow(analyticsPayload)
           return { analytics: mapped, source: 'runtime' }
         }
+        console.warn('[analytics] runtime returned ok:true but data is null — falling back')
       } catch (e) {
         console.warn('[analytics] runtime failed, using legacy fallback:', e)
       }
@@ -199,7 +216,14 @@ export function useOverviewQuery(filters: ActiveFilters, mode: ModePreset | null
           offset: 0,
         })
         if (envelope.data) {
-          const screen = envelope.data as Parameters<typeof mapOverviewScreen>[0]
+          const rawData = envelope.data as Record<string, unknown>
+          // Runtime may wrap as { ok, sync, screen: {...} } or flat { ok, summary_strip, priority_preview }
+          // Normalize: ensure ok is truthy if summary_strip or priority_preview is present
+          const screenRaw = (rawData.screen ?? rawData) as Record<string, unknown>
+          const screen = {
+            ok: screenRaw.ok !== false && !!(screenRaw.summary_strip || screenRaw.priority_preview),
+            ...screenRaw,
+          } as Parameters<typeof mapOverviewScreen>[0]
           const overviewData = mapOverviewScreen(screen, null)
           // Also fetch analytics for charts (non-blocking, best-effort)
           let analyticsData: AnalyticsData | null = null
@@ -209,6 +233,7 @@ export function useOverviewQuery(filters: ActiveFilters, mode: ModePreset | null
           } catch { /* optional */ }
           return { overviewData, analyticsData, source: 'runtime' as RuntimeSource }
         }
+        console.warn('[overview] runtime returned ok:true but data is null — falling back')
       } catch (e) {
         console.warn('[overview] runtime failed, using legacy fallback:', e)
       }

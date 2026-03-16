@@ -13,9 +13,10 @@ export function ContactSection({ detail }: ContactSectionProps) {
   const hasPath = !!(detail.contactPath && detail.contactPath.length > 0)
 
   // Fallback URLs for 'path' state when no explicit contactPath[] steps exist
-  const websiteUrl  = detail.sourceLinks?.find(l => l.label === 'Сайт компании')?.url ?? null
-  const proofUrl    = detail.sourceLinks?.find(l => l.label === 'Доказательство')?.url ?? null
-  const fallbackUrl = websiteUrl ?? proofUrl ?? null
+  const websiteUrl     = detail.sourceLinks?.find(l => l.label === 'Сайт компании')?.url ?? null
+  const proofUrl       = detail.sourceLinks?.find(l => l.label === 'Доказательство')?.url ?? null
+  const fallbackUrl    = websiteUrl ?? proofUrl ?? null
+  const leadProfileUrl = detail.leadProfileUrl ?? null
 
   // Only show "not found" panel when status is explicitly none
   const noContact = detail.contactStatus === 'none' && !hasContacts && !hasPath
@@ -62,6 +63,11 @@ export function ContactSection({ detail }: ContactSectionProps) {
               {detail.contactPath!.map((step) => (
                 <PathStep key={step.step} step={step} />
               ))}
+              {leadProfileUrl && (
+                <div style={{ marginTop: 8 }}>
+                  <LinkAction href={leadProfileUrl} icon="↗">Профиль объекта</LinkAction>
+                </div>
+              )}
             </Panel>
           )}
           {!hasContacts && !hasPath && detail.contactStatus === 'path' && (
@@ -78,14 +84,21 @@ export function ContactSection({ detail }: ContactSectionProps) {
               >
                 Есть путь связи
               </div>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--lh-relaxed)', marginBottom: fallbackUrl ? 10 : 0 }}>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--lh-relaxed)', marginBottom: (fallbackUrl || leadProfileUrl) ? 10 : 0 }}>
                 Прямого контакта нет, но по источнику или сайту компании можно выйти на нужного человека.
               </p>
-              {fallbackUrl && (
-                <LinkAction href={fallbackUrl} icon="↗">
-                  {websiteUrl ? 'Сайт компании' : 'Доказательство / источник'}
-                </LinkAction>
-              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {leadProfileUrl && (
+                  <LinkAction href={leadProfileUrl} icon="↗">
+                    Профиль объекта
+                  </LinkAction>
+                )}
+                {fallbackUrl && (
+                  <LinkAction href={fallbackUrl} icon="↗">
+                    {websiteUrl ? 'Сайт компании' : 'Доказательство / источник'}
+                  </LinkAction>
+                )}
+              </div>
             </Panel>
           )}
           {!hasContacts && !hasPath && detail.contactStatus === 'direct' && (

@@ -26,7 +26,7 @@ export function SignalSection({ detail }: SignalSectionProps) {
             </Field>
           )}
 
-          {detail.demandHint && (
+          {(detail.demandHint || detail.demandHintV2) && (
             <Field label="Подсказка спроса">
               <span
                 style={{
@@ -35,7 +35,7 @@ export function SignalSection({ detail }: SignalSectionProps) {
                   lineHeight: 'var(--lh-relaxed)',
                 }}
               >
-                {detail.demandHint}
+                {detail.demandHint ?? detail.demandHintV2}
               </span>
             </Field>
           )}
