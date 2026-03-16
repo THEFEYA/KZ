@@ -57,6 +57,11 @@ export function AnalyticsPage() {
           paddingTop: 'var(--space-4)',
         }}
       >
+        {/* [DEBUG] ANALYTICS V2 marker */}
+        <div style={{ margin: '0 var(--space-4)', padding: '4px 10px', background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.08em' }}>
+          [ANALYTICS V2]
+        </div>
+
         {/* 1. Summary */}
         {analytics && (
           <Section title="Сводка" noPadding>

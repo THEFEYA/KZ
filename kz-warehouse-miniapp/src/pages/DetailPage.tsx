@@ -69,6 +69,11 @@ export function DetailPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingTop: 'var(--space-3)' }}>
 
+          {/* [DEBUG] DETAIL V2 marker */}
+          <div style={{ margin: '0 var(--space-4) var(--space-2)', padding: '4px 10px', background: 'rgba(0,212,255,0.15)', border: '1px solid rgba(0,212,255,0.4)', borderRadius: 6, fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.08em' }}>
+            [DETAIL V2]
+          </div>
+
           {/* 1. Priority banner — open_first_reason + priority_band + score */}
           {detail.priority && (
             <div style={{ paddingBottom: 'var(--space-3)' }}>

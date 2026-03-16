@@ -98,6 +98,9 @@ export function CandidateCard({ candidate: c, nextCandidateId }: CandidateCardPr
           </div>
         </div>
 
+        {/* [DEBUG] QUEUE V2 marker */}
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#00d4ff', letterSpacing: '0.08em', opacity: 0.8 }}>[QUEUE V2]</div>
+
         {/* Priority band — from live priority layer */}
         {priority?.priorityBandRu && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
