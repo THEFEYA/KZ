@@ -96,7 +96,7 @@ const safeArr = (v: unknown): RpcBreakdownItem[] =>
 
 export function mapQueueRow(row: RpcQueueRow | RpcQueueScreenRow): Candidate {
   const screenRow = row as RpcQueueScreenRow
-  const r = row as Record<string, unknown>
+  const r = row as unknown as Record<string, unknown>
   const h = (r.header ?? {}) as Record<string, unknown>
   return {
     id:                   (r.candidate_id ?? h.candidate_id) as string,
