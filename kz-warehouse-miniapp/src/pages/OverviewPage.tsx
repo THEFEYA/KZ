@@ -5,25 +5,32 @@ import { MainInsightCard } from '@features/overview/MainInsightCard'
 import { ModeRail } from '@features/overview/ModeRail'
 import { QueueEntryCards } from '@features/overview/QueueEntryCards'
 import { AnalyticsPreview } from '@features/overview/AnalyticsPreview'
+import { TopCandidateHero } from '@features/overview/TopCandidateHero'
+import { PriorityPreviewBlock } from '@features/overview/PriorityPreviewBlock'
 import { ActiveFiltersBar } from '@features/filters/ActiveFiltersBar'
-import { useAnalyticsQuery, useConfirmedLeadsQuery } from '@core/supabase/queries'
+import { useOverviewQuery, useConfirmedLeadsQuery } from '@core/supabase/queries'
 import { useFilters, useActiveMode } from '@core/state/selectors'
 
 export function OverviewPage() {
   const filters = useFilters()
   const mode = useActiveMode()
-  const { data: analytics, isLoading, error } = useAnalyticsQuery(filters, mode)
+  const { data, isLoading, error } = useOverviewQuery(filters, mode)
 
-  // Get accurate confirmed leads count from the correct source
   const { data: confirmedLeadsData } = useConfirmedLeadsQuery(5)
 
-  // Merge: override confirmedLeads in summary with value from kz_confirmed_leads
-  const mergedSummary = analytics?.summary
+  const overviewData = data?.overviewData ?? null
+  const analyticsData = data?.analyticsData ?? null
+
+  // Merge confirmed count from dedicated source
+  const summary = overviewData?.summary
     ? {
-        ...analytics.summary,
-        confirmedLeads: confirmedLeadsData?.count ?? analytics.summary.confirmedLeads,
+        ...overviewData.summary,
+        confirmedLeads: confirmedLeadsData?.count ?? overviewData.summary.confirmedLeads,
       }
     : null
+
+  const priorityPreview = overviewData?.priorityPreview ?? null
+  const topCandidate = priorityPreview?.topCandidate ?? null
 
   return (
     <>
@@ -33,17 +40,40 @@ export function OverviewPage() {
 
           {/* Summary metrics strip */}
           <Section noPadding>
-            <SummaryStrip
-              summary={mergedSummary}
-              loading={isLoading}
-            />
+            <SummaryStrip summary={summary} loading={isLoading} />
           </Section>
 
-          {/* Key insight */}
-          <MainInsightCard
-            data={analytics ?? null}
-            loading={isLoading}
-          />
+          {/* Priority preview counts */}
+          {(priorityPreview && (priorityPreview.openFirst > 0 || priorityPreview.priorityCount > 0)) && (
+            <Section title="Приоритет" noPadding>
+              <PriorityPreviewBlock preview={priorityPreview} />
+            </Section>
+          )}
+
+          {/* Hero: top candidate to open first */}
+          {topCandidate && (
+            <Section title="Открыть первым" noPadding>
+              <TopCandidateHero candidate={topCandidate} />
+            </Section>
+          )}
+
+          {/* Key insight — fallback when no top candidate hero */}
+          {!topCandidate && (
+            <MainInsightCard
+              data={analyticsData ?? null}
+              loading={isLoading}
+              mainInsight={overviewData?.mainInsight ?? null}
+            />
+          )}
+
+          {/* Insight below hero when we have both */}
+          {topCandidate && (overviewData?.mainInsight || analyticsData?.topInsight) && (
+            <MainInsightCard
+              data={analyticsData ?? null}
+              loading={false}
+              mainInsight={overviewData?.mainInsight ?? null}
+            />
+          )}
 
           {/* Mode selector */}
           <Section noPadding>
@@ -52,14 +82,15 @@ export function OverviewPage() {
 
           {/* Queue entry cards */}
           <Section title="Быстрый доступ" noPadding>
-            <QueueEntryCards summary={mergedSummary} />
+            <QueueEntryCards summary={summary} />
           </Section>
 
           {/* Analytics mini-preview */}
           <Section title="Аналитика среза" noPadding>
             <AnalyticsPreview
-              data={analytics ?? null}
+              data={analyticsData ?? null}
               loading={isLoading}
+              analyticsPreview={overviewData?.analyticsPreview ?? null}
             />
           </Section>
 

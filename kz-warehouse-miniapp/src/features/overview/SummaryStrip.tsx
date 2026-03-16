@@ -17,7 +17,7 @@ export function SummaryStrip({ summary, loading }: SummaryStripProps) {
         className="scroll-x"
         style={{ display: 'flex', gap: 8, padding: '0 var(--space-4)', paddingBottom: 4 }}
       >
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: 6 }).map((_, i) => (
           <MetricSkeleton key={i} />
         ))}
       </div>
@@ -52,6 +52,11 @@ export function SummaryStrip({ summary, loading }: SummaryStripProps) {
       onClick: () => navigate('/queues'),
     },
     {
+      label: 'Есть контакт',
+      value: summary.withContact > 0 ? summary.withContact : (summary.directContact + summary.contactPath),
+      color: 'var(--color-path-contact)',
+    },
+    {
       label: 'Прямой контакт',
       value: summary.directContact,
       color: 'var(--color-direct-contact)',
@@ -66,11 +71,21 @@ export function SummaryStrip({ summary, loading }: SummaryStripProps) {
       value: summary.noContact,
       color: 'var(--color-no-contact)',
     },
-    {
-      label: 'Средний приоритет',
-      value: summary.avgPriority ? summary.avgPriority.toFixed(0) : '—',
+    ...(summary.avgRank > 0 ? [{
+      label: 'Средний ранг',
+      value: Math.round(summary.avgRank),
       subtitle: 'баллов',
-    },
+    }] : []),
+    ...(summary.avgScore > 0 ? [{
+      label: 'Средняя оценка',
+      value: Math.round(summary.avgScore),
+      subtitle: 'баллов',
+    }] : []),
+    ...(summary.avgPriority > 0 && summary.avgRank === 0 ? [{
+      label: 'Средний приоритет',
+      value: Math.round(summary.avgPriority),
+      subtitle: 'баллов',
+    }] : []),
   ]
 
   return (

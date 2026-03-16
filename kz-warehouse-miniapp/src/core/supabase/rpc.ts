@@ -1,12 +1,44 @@
 import { supabase } from './client'
 import type {
   RpcQueueParams, RpcQueueRow, RpcQueueEnvelope,
+  RpcQueueScreenRow, RpcQueueScreenEnvelope,
   RpcDetailParams, RpcDetailRow, RpcEvidence, RpcContact, RpcContactPath, RpcSourceLink,
   RpcAnalyticsParams, RpcAnalyticsRow,
   RpcConfirmedLeadsEnvelope,
+  RpcOpenCandidateResult,
+  RpcOverviewScreen,
 } from '@core/types/rpc'
 
-export async function rpcQueue(params: RpcQueueParams): Promise<RpcQueueRow[]> {
+// ─── kz_miniapp_queue_screen_v1 (primary) / kz_miniapp_queue_v2 (fallback) ──
+// Screen v1 adds priority + card_reason to each item.
+// Falls back to v2 gracefully if v1 is unavailable or returns error.
+
+export async function rpcQueueScreen(params: RpcQueueParams): Promise<RpcQueueScreenRow[]> {
+  // Try screen v1 first
+  try {
+    const { data, error } = await supabase.rpc('kz_miniapp_queue_screen_v1', {
+      p_bucket:                 params.p_bucket,
+      p_region:                 params.p_region,
+      p_market_role:            params.p_market_role,
+      p_heat_label_ru:          params.p_heat_label_ru,
+      p_freshness_label_ru:     params.p_freshness_label_ru,
+      p_has_contact:            params.p_has_contact,
+      p_contact_path_status_v2: params.p_contact_path_status_v2,
+      p_limit:                  params.p_limit,
+      p_offset:                 params.p_offset,
+    })
+    if (!error && data) {
+      if (typeof data === 'object' && !Array.isArray(data)) {
+        const env = data as RpcQueueScreenEnvelope
+        return Array.isArray(env.items) ? env.items : []
+      }
+      return Array.isArray(data) ? (data as RpcQueueScreenRow[]) : []
+    }
+  } catch {
+    // Fall through to v2
+  }
+
+  // Fallback: v2 (no priority/card_reason)
   const { data, error } = await supabase.rpc('kz_miniapp_queue_v2', {
     p_bucket:                 params.p_bucket,
     p_region:                 params.p_region,
@@ -20,13 +52,54 @@ export async function rpcQueue(params: RpcQueueParams): Promise<RpcQueueRow[]> {
   })
   if (error) throw new Error(error.message)
 
-  // Backend returns envelope { ok, items, total, bucket } — NOT a raw array
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    const env = data as RpcQueueEnvelope
+    return Array.isArray(env.items) ? (env.items as RpcQueueScreenRow[]) : []
+  }
+  return Array.isArray(data) ? (data as RpcQueueScreenRow[]) : []
+}
+
+// Legacy alias — kept for confirmed leads mapper compatibility
+export async function rpcQueue(params: RpcQueueParams): Promise<RpcQueueRow[]> {
+  const { data, error } = await supabase.rpc('kz_miniapp_queue_v2', {
+    p_bucket:                 params.p_bucket,
+    p_region:                 params.p_region,
+    p_market_role:            params.p_market_role,
+    p_heat_label_ru:          params.p_heat_label_ru,
+    p_freshness_label_ru:     params.p_freshness_label_ru,
+    p_has_contact:            params.p_has_contact,
+    p_contact_path_status_v2: params.p_contact_path_status_v2,
+    p_limit:                  params.p_limit,
+    p_offset:                 params.p_offset,
+  })
+  if (error) throw new Error(error.message)
   if (data && typeof data === 'object' && !Array.isArray(data)) {
     const env = data as RpcQueueEnvelope
     return Array.isArray(env.items) ? env.items : []
   }
-  // Fallback: if backend ever returns plain array
   return Array.isArray(data) ? (data as RpcQueueRow[]) : []
+}
+
+// ─── kz_miniapp_open_candidate_v1 (primary) / kz_miniapp_record_detail_v1 ───
+// open_candidate_v1 wraps detail with priority + explanation layers.
+
+export async function rpcOpenCandidate(
+  params: RpcDetailParams,
+): Promise<RpcOpenCandidateResult | null> {
+  // Try open_candidate_v1 first
+  try {
+    const { data, error } = await supabase.rpc('kz_miniapp_open_candidate_v1', {
+      p_candidate_id: params.p_candidate_id,
+      p_lead_id:      params.p_lead_id,
+    })
+    if (!error && data) {
+      const raw = (Array.isArray(data) ? data[0] : data) as Record<string, unknown>
+      if (raw) return raw as unknown as RpcOpenCandidateResult
+    }
+  } catch {
+    // Fall through
+  }
+  return null
 }
 
 export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow | null> {
@@ -48,7 +121,7 @@ export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow |
     return raw.item as unknown as RpcDetailRow
   }
 
-  // Nested shape: { ok, header:{...}, signal:{...}, quality:{...}, contact:{...}, evidence:{...}, active_lead:{...}, dedupe:{...} }
+  // Nested shape: { ok, header:{...}, signal:{...}, quality:{...}, contact:{...}, evidence:{...} }
   if (raw.header || raw.signal || raw.quality || raw.contact) {
     const h  = (raw.header      ?? {}) as Record<string, unknown>
     const s  = (raw.signal      ?? {}) as Record<string, unknown>
@@ -78,6 +151,7 @@ export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow |
       has_indirect_path:        (c.has_indirect_path   ?? false) as boolean,
       company_website:          (c.company_website  ?? null) as string | null,
       proof_url:                (c.proof_url        ?? null) as string | null,
+      lead_profile_url:         (c.lead_profile_url ?? null) as string | null,
       evidence_count: (
         ev.evidence_count != null
           ? ev.evidence_count
@@ -90,9 +164,9 @@ export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow |
       region:       (h.region      ?? raw.region      ?? null) as string | null,
       source_name:  (h.source_name  ?? raw.source_name  ?? null) as string | null,
       source_url:   (h.source_url   ?? raw.source_url   ?? null) as string | null,
-      demand_hint:  (h.demand_hint  ?? raw.demand_hint  ?? null) as string | null,
+      demand_hint:  (h.demand_hint  ?? s.demand_hint  ?? raw.demand_hint  ?? null) as string | null,
+      demand_hint_v2: (s.demand_hint_v2 ?? raw.demand_hint_v2 ?? null) as string | null,
       quality_score:(q.quality_score ?? raw.quality_score ?? null) as number | null,
-      // Enriched fields
       lead_status_ru:     (al.lead_status_ru ?? null) as string | null,
       lead_score:         (al.score_total    ?? null) as number | null,
       relevance_label_ru: (q.relevance_label_ru ?? null) as string | null,
@@ -106,7 +180,29 @@ export async function rpcDetail(params: RpcDetailParams): Promise<RpcDetailRow |
   return null
 }
 
-export async function rpcAnalytics(params: RpcAnalyticsParams): Promise<RpcAnalyticsRow | null> {
+// ─── kz_miniapp_analytics_screen_v1 (primary) / kz_miniapp_analytics_v2 ─────
+// Analytics screen v1 may return priority_preview + by_source_tier.
+
+export async function rpcAnalyticsScreen(params: RpcAnalyticsParams): Promise<RpcAnalyticsRow | null> {
+  // Try screen v1 first
+  try {
+    const { data, error } = await supabase.rpc('kz_miniapp_analytics_screen_v1', {
+      p_region:                 params.p_region,
+      p_bucket:                 params.p_bucket,
+      p_market_role:            params.p_market_role,
+      p_heat_label_ru:          params.p_heat_label_ru,
+      p_freshness_label_ru:     params.p_freshness_label_ru,
+      p_has_contact:            params.p_has_contact,
+      p_contact_path_status_v2: params.p_contact_path_status_v2,
+    })
+    if (!error && data) {
+      return Array.isArray(data) ? ((data as RpcAnalyticsRow[])[0] ?? null) : (data as RpcAnalyticsRow)
+    }
+  } catch {
+    // Fall through
+  }
+
+  // Fallback: v2
   const { data, error } = await supabase.rpc('kz_miniapp_analytics_v2', {
     p_region:                 params.p_region,
     p_bucket:                 params.p_bucket,
@@ -115,17 +211,32 @@ export async function rpcAnalytics(params: RpcAnalyticsParams): Promise<RpcAnaly
     p_freshness_label_ru:     params.p_freshness_label_ru,
     p_has_contact:            params.p_has_contact,
     p_contact_path_status_v2: params.p_contact_path_status_v2,
-    // p_limit, p_offset, p_tier intentionally omitted
   })
   if (error) throw new Error(error.message)
   if (!data) return null
+  return Array.isArray(data) ? ((data as RpcAnalyticsRow[])[0] ?? null) : (data as RpcAnalyticsRow)
+}
 
-  // Backend returns a single object { ok, summary, charts } — NOT an array
-  if (Array.isArray(data)) {
-    // Fallback: if backend wraps in array
-    return (data as RpcAnalyticsRow[])[0] ?? null
+// ─── kz_miniapp_overview_screen_v1 ───────────────────────────────────────────
+
+export async function rpcOverviewScreen(params: RpcAnalyticsParams): Promise<RpcOverviewScreen | null> {
+  try {
+    const { data, error } = await supabase.rpc('kz_miniapp_overview_screen_v1', {
+      p_region:                 params.p_region,
+      p_bucket:                 params.p_bucket,
+      p_market_role:            params.p_market_role,
+      p_heat_label_ru:          params.p_heat_label_ru,
+      p_freshness_label_ru:     params.p_freshness_label_ru,
+      p_has_contact:            params.p_has_contact,
+      p_contact_path_status_v2: params.p_contact_path_status_v2,
+    })
+    if (!error && data) {
+      return Array.isArray(data) ? ((data as RpcOverviewScreen[])[0] ?? null) : (data as RpcOverviewScreen)
+    }
+  } catch {
+    // Overview screen v1 not yet available — will fall back to analytics data in mapper
   }
-  return data as RpcAnalyticsRow
+  return null
 }
 
 // ─── public.kz_confirmed_leads ──────────────────────────────────────────────
@@ -141,7 +252,6 @@ export async function rpcConfirmedLeads(
   if (error) throw new Error(error.message)
   if (!data) return { count: 0, items: [] }
 
-  // Handle envelope: { ok, count, items }
   if (typeof data === 'object' && !Array.isArray(data)) {
     const env = data as RpcConfirmedLeadsEnvelope
     return {
@@ -149,7 +259,6 @@ export async function rpcConfirmedLeads(
       items: Array.isArray(env.items) ? env.items : [],
     }
   }
-  // Fallback: plain array
   if (Array.isArray(data)) {
     return { count: data.length, items: data as RpcQueueRow[] }
   }
@@ -157,8 +266,6 @@ export async function rpcConfirmedLeads(
 }
 
 // ─── public.kz_assign_lead_to_manager_by_telegram ───────────────────────────
-// Assigns a lead/candidate to a manager via Telegram flow
-// Expected params: p_candidate_id uuid, p_telegram_user_id bigint
 
 export async function rpcAssignLeadToManager(
   candidateId: string,
@@ -177,8 +284,6 @@ export async function rpcAssignLeadToManager(
 }
 
 // ─── public.kz_queue_lead_handoff ───────────────────────────────────────────
-// Moves a candidate to the review/handoff queue
-// Expected params: p_candidate_id uuid, p_target_queue text
 
 export async function rpcQueueLeadHandoff(
   candidateId: string,

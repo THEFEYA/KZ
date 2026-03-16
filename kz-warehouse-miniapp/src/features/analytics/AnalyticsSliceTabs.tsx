@@ -6,12 +6,13 @@ interface AnalyticsSliceTabsProps {
 }
 
 const SLICES: { value: AnalyticsSlice; label: string }[] = [
+  { value: 'queue',       label: 'По очередям' },
   { value: 'source',      label: 'По источникам' },
   { value: 'contact_type',label: 'По связи' },
-  { value: 'market_role', label: 'По ролям' },
-  { value: 'queue',       label: 'По очередям' },
   { value: 'heat',        label: 'По горячести' },
   { value: 'freshness',   label: 'По свежести' },
+  { value: 'source_tier', label: 'По тиру' },
+  { value: 'market_role', label: 'По ролям' },
 ]
 
 export function AnalyticsSliceTabs({ value, onChange }: AnalyticsSliceTabsProps) {

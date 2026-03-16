@@ -6,9 +6,10 @@ import { computeInsight } from '@core/utils/chartTransforms'
 interface MainInsightCardProps {
   data: AnalyticsData | null
   loading?: boolean
+  mainInsight?: string | null  // from overview_screen_v1 — preferred if present
 }
 
-export function MainInsightCard({ data, loading }: MainInsightCardProps) {
+export function MainInsightCard({ data, loading, mainInsight }: MainInsightCardProps) {
   if (loading) {
     return (
       <Panel glow style={{ margin: '0 var(--space-4)' }}>
@@ -19,11 +20,14 @@ export function MainInsightCard({ data, loading }: MainInsightCardProps) {
     )
   }
 
-  if (!data) return null
+  if (!data && !mainInsight) return null
 
   const insight =
-    data.topInsight ??
-    computeInsight(data.summary, data.bySource, data.byHeat)
+    mainInsight ??
+    data?.topInsight ??
+    (data ? computeInsight(data.summary, data.bySource, data.byHeat) : null)
+
+  if (!insight) return null
 
   return (
     <Panel
@@ -56,7 +60,7 @@ export function MainInsightCard({ data, loading }: MainInsightCardProps) {
         {insight}
       </p>
 
-      {data.summary.confirmedLeads > 0 && (
+      {data && data.summary.confirmedLeads > 0 && (
         <div
           style={{
             marginTop: 12,

@@ -25,16 +25,41 @@ export function CandidateCard({ candidate: c, nextCandidateId }: CandidateCardPr
     : c.contactStatus === 'path'  ? 'Путь связи'
     : 'Нет контакта'
 
+  const priority = c.priority
+  const cardReason = c.cardReason
+
+  const isOpenFirst =
+    priority?.priorityBandRu?.toLowerCase().includes('первым') ||
+    priority?.openFirstReasonRu != null
+
+  const bandColor = isOpenFirst
+    ? 'var(--color-accent)'
+    : priority?.priorityBandRu?.toLowerCase().includes('высок')
+      ? 'var(--color-hot)'
+      : null
+
   return (
     <div
       className="animate-fade-in"
       style={{
         background: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
+        border: `1px solid ${isOpenFirst ? 'var(--color-accent-glow)' : 'var(--color-border)'}`,
         borderRadius: 'var(--radius-lg)',
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
+      {/* Open-first accent top bar */}
+      {isOpenFirst && (
+        <div
+          style={{
+            height: 2,
+            background: 'linear-gradient(90deg, var(--color-accent), transparent)',
+            opacity: 0.8,
+          }}
+        />
+      )}
+
       {/* Main body — tap to open detail */}
       <div
         onClick={handleCardClick}
@@ -46,7 +71,7 @@ export function CandidateCard({ candidate: c, nextCandidateId }: CandidateCardPr
           gap: 'var(--space-2)',
         }}
       >
-        {/* Row 1: Name + heat + priority */}
+        {/* Row 1: Name + heat + priority rank */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, justifyContent: 'space-between' }}>
           <h3
             style={{
@@ -73,11 +98,49 @@ export function CandidateCard({ candidate: c, nextCandidateId }: CandidateCardPr
           </div>
         </div>
 
+        {/* Priority band — from live priority layer */}
+        {priority?.priorityBandRu && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: '50%',
+                background: bandColor ?? 'var(--color-text-tertiary)',
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontSize: 'var(--text-xs)',
+                fontWeight: 'var(--fw-semibold)',
+                color: bandColor ?? 'var(--color-text-secondary)',
+              }}
+            >
+              {priority.priorityBandRu}
+            </span>
+          </div>
+        )}
+
         {/* Row 2: signal + object */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           <Chip variant="accent" size="sm">{c.normalizedSignalType}</Chip>
           {c.objectAnchor && <Chip variant="default" size="sm">{c.objectAnchor}</Chip>}
         </div>
+
+        {/* Card reason — why this record */}
+        {cardReason?.reasonShortRu && (
+          <p
+            style={{
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-text-secondary)',
+              lineHeight: 'var(--lh-relaxed)',
+              margin: 0,
+            }}
+          >
+            {cardReason.reasonShortRu}
+          </p>
+        )}
 
         {/* Row 3: entity type + role + region */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
@@ -109,9 +172,26 @@ export function CandidateCard({ candidate: c, nextCandidateId }: CandidateCardPr
           </div>
           <Chip variant={contactVariant} size="sm" dot>{contactLabel}</Chip>
         </div>
+
+        {/* Next step hint */}
+        {cardReason?.nextStepRu && (
+          <div
+            style={{
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-accent)',
+              marginTop: -2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <span>→</span>
+            <span>{cardReason.nextStepRu}</span>
+          </div>
+        )}
       </div>
 
-      {/* Action row — inline quick actions */}
+      {/* Action row */}
       <div style={{ borderTop: '1px solid var(--color-border)', display: 'flex' }}>
         <CardAction
           label="Подробнее"

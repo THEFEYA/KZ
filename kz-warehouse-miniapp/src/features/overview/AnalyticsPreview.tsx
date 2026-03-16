@@ -3,14 +3,15 @@ import { Panel } from '@shared/ui/Panel'
 import { MiniBars } from '@shared/charts/MiniBars'
 import { Skeleton } from '@shared/ui/Skeleton'
 import { toMiniBarData } from '@core/utils/chartTransforms'
-import type { AnalyticsData } from '@core/types/analytics'
+import type { AnalyticsData, BreakdownItem } from '@core/types/analytics'
 
 interface AnalyticsPreviewProps {
   data: AnalyticsData | null
   loading?: boolean
+  analyticsPreview?: { bySource: BreakdownItem[]; byHeat: BreakdownItem[] } | null
 }
 
-export function AnalyticsPreview({ data, loading }: AnalyticsPreviewProps) {
+export function AnalyticsPreview({ data, loading, analyticsPreview }: AnalyticsPreviewProps) {
   const navigate = useNavigate()
 
   if (loading) {
@@ -22,10 +23,13 @@ export function AnalyticsPreview({ data, loading }: AnalyticsPreviewProps) {
     )
   }
 
-  if (!data) return null
+  if (!data && !analyticsPreview) return null
 
-  const sourceData = toMiniBarData(data.bySource, 6)
-  const heatData = toMiniBarData(data.byHeat, 3)
+  // Prefer overview_screen_v1 analytics_preview when available
+  const bySource = analyticsPreview?.bySource ?? data?.bySource ?? []
+  const byHeat   = analyticsPreview?.byHeat   ?? data?.byHeat   ?? []
+  const sourceData = toMiniBarData(bySource, 6)
+  const heatData   = toMiniBarData(byHeat,   3)
 
   return (
     <Panel

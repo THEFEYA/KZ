@@ -4,6 +4,10 @@ export const ENV = {
   TELEGRAM_BOT_NAME: import.meta.env.VITE_TELEGRAM_BOT_NAME as string | undefined,
   APP_TITLE: (import.meta.env.VITE_APP_TITLE as string) ?? 'KZ Warehouse',
   DEBUG: import.meta.env.VITE_ENABLE_DEBUG === 'true',
+  // Debug Telegram identity for browser preview outside Telegram
+  // Set in .env.local: VITE_DEBUG_TELEGRAM_USER_ID=123456789
+  DEBUG_TELEGRAM_USER_ID: import.meta.env.VITE_DEBUG_TELEGRAM_USER_ID ?? null,
+  DEBUG_TELEGRAM_CHAT_ID: import.meta.env.VITE_DEBUG_TELEGRAM_CHAT_ID ?? null,
 } as const
 
 if (!ENV.SUPABASE_URL || !ENV.SUPABASE_KEY) {

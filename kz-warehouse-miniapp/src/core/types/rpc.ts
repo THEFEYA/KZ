@@ -1,5 +1,5 @@
 // Raw RPC types — aligned to real Supabase function signatures
-// Field names reflect actual backend v2 response shape
+// Field names reflect actual backend v2/v1 screen contract response shapes
 
 // ─── kz_miniapp_queue_v2 ────────────────────────────────────────────────────
 // Returns envelope: { ok, items, total, bucket }
@@ -43,6 +43,35 @@ export interface RpcQueueRow {
   actionable_bucket_ru: string         // already Russian, e.g. 'Рабочая очередь'
   demand_hint: string | null
   quality_score: number | null
+  // Source tier enrichment
+  source_tier_ru: string | null
+}
+
+// ─── kz_miniapp_queue_screen_v1 (new live screen contract) ──────────────────
+// Extends queue rows with priority + card_reason layers.
+// Falls back gracefully if these fields are absent.
+export interface RpcPriority {
+  priority_score: number | null
+  priority_band_ru: string | null
+  open_first_reason_ru: string | null
+  priority_label_ru?: string | null
+}
+
+export interface RpcCardReason {
+  reason_short_ru: string | null
+  next_step_ru: string | null
+}
+
+export interface RpcQueueScreenRow extends RpcQueueRow {
+  priority: RpcPriority | null
+  card_reason: RpcCardReason | null
+}
+
+export interface RpcQueueScreenEnvelope {
+  ok: boolean
+  items: RpcQueueScreenRow[]
+  total: number
+  bucket: string
 }
 
 // ─── kz_miniapp_record_detail_v1 ────────────────────────────────────────────
@@ -72,6 +101,7 @@ export interface RpcDetailRow {
   has_indirect_path: boolean
   company_website: string | null
   proof_url: string | null
+  lead_profile_url: string | null
   evidence_count: number
   // Evidence arrives nested: evidence.items
   evidence: { items: RpcEvidence[] } | null
@@ -82,6 +112,7 @@ export interface RpcDetailRow {
   source_name: string | null
   source_url: string | null
   demand_hint: string | null
+  demand_hint_v2: string | null
   quality_score: number | null         // fallback alias
   // Enriched fields — from nested active_lead / quality / header / evidence / dedupe sections
   lead_status_ru: string | null
@@ -99,6 +130,7 @@ export interface RpcContact {
   phone: string | null
   email: string | null
   telegram: string | null
+  whatsapp: string | null
 }
 
 export interface RpcContactPath {
@@ -120,7 +152,116 @@ export interface RpcSourceLink {
   url: string
 }
 
-// ─── kz_miniapp_analytics_v2 ────────────────────────────────────────────────
+// ─── kz_miniapp_open_candidate_v1 ────────────────────────────────────────────
+// Wraps record_detail_v1 with priority + explanation layers.
+// Returns: { ok, priority, explanation, ...detail_fields }
+export interface RpcExplanation {
+  title_ru: string | null
+  summary_ru: string | null
+  bullets_ru: string[] | null
+  priority_label_ru: string | null
+  operator_hint_ru: string | null
+}
+
+export interface RpcOpenCandidateResult {
+  ok: boolean
+  priority: RpcPriority | null
+  explanation: RpcExplanation | null
+  // Detail fields — may be nested or flat (same normalisation as record_detail_v1)
+  candidate_id?: string
+  display_label_v2?: string
+  // Nested sections (same as record_detail_v1 nested shape)
+  header?: Record<string, unknown>
+  signal?: Record<string, unknown>
+  quality?: Record<string, unknown>
+  contact?: Record<string, unknown>
+  evidence?: Record<string, unknown>
+  active_lead?: Record<string, unknown>
+  dedupe?: Record<string, unknown>
+  // Flat top-level detail fields (when returned flat)
+  entity_type_ru?: string
+  market_role_label_ru?: string
+  signal_type?: string
+  normalized_signal_type_v2?: string | null
+  object_anchor_label_v2?: string | null
+  heat_label_ru?: string
+  freshness_label_ru?: string
+  rank_total_v2?: number
+  score_total?: number | null
+  actionable_bucket_ru?: string
+  contact_path_label_ru_v2?: string
+  has_direct_contact?: boolean
+  has_indirect_path?: boolean
+  company_website?: string | null
+  proof_url?: string | null
+  lead_profile_url?: string | null
+  evidence_count?: number
+  contacts?: RpcContact[] | null
+  contact_path?: RpcContactPath[] | null
+  source_links?: RpcSourceLink[] | null
+  region?: string | null
+  source_name?: string | null
+  source_url?: string | null
+  demand_hint?: string | null
+  demand_hint_v2?: string | null
+  quality_score?: number | null
+  lead_status_ru?: string | null
+  lead_score?: number | null
+  relevance_label_ru?: string | null
+  source_tier_ru?: string | null
+  evidence_short?: string | null
+  evidence_full?: string | null
+  duplicate_count?: number | null
+}
+
+// ─── kz_miniapp_overview_screen_v1 ───────────────────────────────────────────
+// Returns workspace-aware overview payload
+export interface RpcTopCandidate {
+  candidate_id: string
+  display_label_v2: string
+  signal_type: string | null
+  object_anchor_label_v2: string | null
+  priority: RpcPriority | null
+}
+
+export interface RpcOverviewSummaryStrip {
+  total: number
+  review_queue: number
+  open_first: number
+  priority: number
+  with_contact: number
+  avg_rank: number
+  avg_score: number
+  action_queue?: number
+  confirmed_leads?: number
+  direct_contact?: number
+  contact_path?: number
+  without_contact?: number
+}
+
+export interface RpcOverviewPriorityPreview {
+  open_first: number
+  priority: number
+  review: number
+  top_candidate: RpcTopCandidate | null
+}
+
+export interface RpcOverviewScreen {
+  ok: boolean
+  active_mode_label_ru: string | null
+  summary_strip: RpcOverviewSummaryStrip | null
+  priority_preview: RpcOverviewPriorityPreview | null
+  main_insight: string | null
+  quick_entries: Array<{ label: string; count: number; route?: string }> | null
+  analytics_preview: {
+    by_source?: RpcBreakdownItem[]
+    by_heat?: RpcBreakdownItem[]
+  } | null
+  available_modes: Array<{ id: string; label: string }> | null
+}
+
+// ─── kz_miniapp_analytics_v2 / kz_miniapp_analytics_screen_v1 ───────────────
+// v1 screen may return priority_preview + by_source_tier in addition to v2 fields
 // Returns single object (NOT an array): { ok, summary, charts }
 // NOT supported: p_limit, p_offset, p_tier
 export interface RpcAnalyticsParams {
@@ -138,6 +279,7 @@ export interface RpcAnalyticsRow {
   summary: RpcAnalyticsSummary
   charts: RpcAnalyticsCharts
   top_insight?: string | null
+  priority_preview?: RpcOverviewPriorityPreview | null
 }
 
 export interface RpcAnalyticsSummary {
@@ -152,7 +294,12 @@ export interface RpcAnalyticsSummary {
   review_queue?: number
   contact_path?: number
   no_contact?: number
+  with_contact?: number     // v1 screen field
   avg_priority?: number
+  avg_rank?: number         // v1 screen field
+  avg_score?: number        // v1 screen field
+  open_first?: number       // v1 screen field
+  priority?: number         // v1 screen field — priority band count
 }
 
 export interface RpcAnalyticsCharts {
@@ -164,6 +311,7 @@ export interface RpcAnalyticsCharts {
   by_freshness?: RpcBreakdownItem[]
   by_contact_type?: RpcBreakdownItem[]
   by_market_role?: RpcBreakdownItem[]
+  by_source_tier?: RpcBreakdownItem[]  // v1 screen field
 }
 
 export interface RpcBreakdownItem {
