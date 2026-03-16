@@ -234,7 +234,7 @@ export function useOverviewQuery(filters: ActiveFilters, mode: ModePreset | null
           try {
             const embeddedAnalytics = rawData.analytics_preview as Record<string, unknown> | undefined
             if (embeddedAnalytics?.summary || embeddedAnalytics?.charts) {
-              analyticsData = mapAnalyticsRow(embeddedAnalytics as Parameters<typeof mapAnalyticsRow>[0])
+              analyticsData = mapAnalyticsRow(embeddedAnalytics as unknown as Parameters<typeof mapAnalyticsRow>[0])
             } else {
               const aEnv = await runtimeAnalytics({ activeModeCode: mode?.id ?? null })
               if (aEnv.data) analyticsData = mapAnalyticsRow(aEnv.data as Parameters<typeof mapAnalyticsRow>[0])
