@@ -96,9 +96,11 @@ const safeArr = (v: unknown): RpcBreakdownItem[] =>
 
 export function mapQueueRow(row: RpcQueueRow | RpcQueueScreenRow): Candidate {
   const screenRow = row as RpcQueueScreenRow
+  const r = row as Record<string, unknown>
+  const h = (r.header ?? {}) as Record<string, unknown>
   return {
-    id:                   row.candidate_id,
-    displayEntity:        row.display_label_v2,
+    id:                   (r.candidate_id ?? h.candidate_id) as string,
+    displayEntity:        (r.display_label_v2 ?? h.display_label_v2) as string,
     entityType:           mapEntityTypeRu(row.entity_type_ru),
     marketRole:           row.market_role_label_ru ?? '',
     normalizedSignalType: row.signal_type ?? '',
@@ -320,7 +322,7 @@ export function mapAnalyticsRow(row: RpcAnalyticsRow): AnalyticsData {
       openFirst:     pp.open_first ?? 0,
       priorityCount: pp.priority   ?? 0,
       reviewCount:   pp.review     ?? 0,
-      topCandidate: pp.top_candidate ? {
+      topCandidate: (pp.top_candidate && pp.top_candidate.candidate_id) ? {
         id:               pp.top_candidate.candidate_id,
         displayLabel:     pp.top_candidate.display_label_v2,
         signalType:       pp.top_candidate.signal_type        ?? null,
@@ -375,7 +377,7 @@ export function mapOverviewScreen(
       openFirst:     pp.open_first ?? 0,
       priorityCount: pp.priority   ?? 0,
       reviewCount:   pp.review     ?? 0,
-      topCandidate: pp.top_candidate ? {
+      topCandidate: (pp.top_candidate && pp.top_candidate.candidate_id) ? {
         id:               pp.top_candidate.candidate_id,
         displayLabel:     pp.top_candidate.display_label_v2,
         signalType:       pp.top_candidate.signal_type ?? null,
