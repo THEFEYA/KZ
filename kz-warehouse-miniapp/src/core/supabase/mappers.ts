@@ -365,7 +365,7 @@ export function mapOverviewScreen(
       total:          ss.total            ?? 0,
       actionQueue:    ss.action_queue     ?? 0,
       reviewQueue:    ss.review_queue     ?? 0,
-      confirmedLeads: ss.confirmed_leads  ?? 0,
+      confirmedLeads: ss.confirmed_leads  ?? ss.confirmed ?? 0,
       directContact:  ss.direct_contact   ?? 0,
       contactPath:    ss.contact_path     ?? 0,
       noContact:      ss.without_contact  ?? 0,

@@ -217,19 +217,28 @@ export function useOverviewQuery(filters: ActiveFilters, mode: ModePreset | null
         })
         if (envelope.data) {
           const rawData = envelope.data as Record<string, unknown>
-          // Runtime may wrap as { ok, sync, screen: {...} } or flat { ok, summary_strip, priority_preview }
-          // Normalize: ensure ok is truthy if summary_strip or priority_preview is present
-          const screenRaw = (rawData.screen ?? rawData) as Record<string, unknown>
+          // Runtime returns flat structure: summary_strip/priority_preview/main_insight at top level.
+          // rawData.screen is only metadata (type/title/mode), NOT the actual screen data.
+          // Prefer rawData.screen only if it contains the actual data fields.
+          const screenCandidate = rawData.screen as Record<string, unknown> | undefined
+          const screenRaw = (screenCandidate?.summary_strip || screenCandidate?.priority_preview)
+            ? screenCandidate as Record<string, unknown>
+            : rawData as Record<string, unknown>
           const screen = {
             ok: screenRaw.ok !== false && !!(screenRaw.summary_strip || screenRaw.priority_preview),
             ...screenRaw,
           } as Parameters<typeof mapOverviewScreen>[0]
           const overviewData = mapOverviewScreen(screen, null)
-          // Also fetch analytics for charts (non-blocking, best-effort)
+          // Use analytics_preview embedded in the overview response if available (avoids extra request)
           let analyticsData: AnalyticsData | null = null
           try {
-            const aEnv = await runtimeAnalytics({ activeModeCode: mode?.id ?? null })
-            if (aEnv.data) analyticsData = mapAnalyticsRow(aEnv.data as Parameters<typeof mapAnalyticsRow>[0])
+            const embeddedAnalytics = rawData.analytics_preview as Record<string, unknown> | undefined
+            if (embeddedAnalytics?.summary || embeddedAnalytics?.charts) {
+              analyticsData = mapAnalyticsRow(embeddedAnalytics as Parameters<typeof mapAnalyticsRow>[0])
+            } else {
+              const aEnv = await runtimeAnalytics({ activeModeCode: mode?.id ?? null })
+              if (aEnv.data) analyticsData = mapAnalyticsRow(aEnv.data as Parameters<typeof mapAnalyticsRow>[0])
+            }
           } catch { /* optional */ }
           return { overviewData, analyticsData, source: 'runtime' as RuntimeSource }
         }
