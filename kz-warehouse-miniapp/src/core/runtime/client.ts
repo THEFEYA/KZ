@@ -20,9 +20,19 @@ export function getTelegramCtx(): TelegramCtx {
   if (isTelegramEnv()) {
     const tg = getTgApp()!
     const unsafe = tg.initDataUnsafe as Record<string, unknown>
-    const userId  = String((unsafe.user as Record<string, unknown>)?.id ?? '')
+    const userObj = unsafe.user as Record<string, unknown> | undefined
+    const userId  = String(userObj?.id ?? '')
     const chatObj = unsafe.chat as Record<string, unknown> | undefined
     const chatId  = String(chatObj?.id ?? userId) // fallback: user_id in direct chats
+
+    if (!userId) {
+      console.error('[TgCtx] ❌ Telegram env detected but user.id is MISSING', {
+        initDataUnsafe: unsafe,
+        initData: tg.initData?.slice(0, 80),
+      })
+    } else {
+      console.log('[TgCtx] ✅ Telegram env — userId:', userId, 'chatId:', chatId)
+    }
     return { telegramUserId: userId, telegramChatId: chatId }
   }
 
@@ -30,6 +40,13 @@ export function getTelegramCtx(): TelegramCtx {
   const params = new URLSearchParams(window.location.search)
   const userId = params.get('tgUserId') ?? ENV.DEBUG_TELEGRAM_USER_ID ?? ''
   const chatId = params.get('tgChatId') ?? ENV.DEBUG_TELEGRAM_CHAT_ID ?? userId
+
+  if (!userId) {
+    console.error('[TgCtx] ❌ NO Telegram context and no debug IDs set.',
+      'Добавь ?tgUserId=XXX&tgChatId=YYY в URL или VITE_DEBUG_TELEGRAM_USER_ID в .env.local')
+  } else {
+    console.log('[TgCtx] 🔧 Debug env — userId:', userId, 'chatId:', chatId)
+  }
   return { telegramUserId: userId, telegramChatId: chatId }
 }
 
@@ -38,12 +55,34 @@ export function getTelegramCtx(): TelegramCtx {
 export async function invokeRuntime<T = unknown>(
   payload: Record<string, unknown>,
 ): Promise<RuntimeEnvelope<T>> {
+  const action = String(payload.action ?? 'unknown')
+  const sentUserId = String(payload.telegram_user_id ?? '')
+  const sentChatId = String(payload.telegram_chat_id ?? '')
+
+  console.log(`[runtime→${action}] 📤 userId="${sentUserId || '(empty!)'}" chatId="${sentChatId || '(empty!)'}"`)
+
+  if (!sentUserId || !sentChatId) {
+    const msg = `[runtime→${action}] ❌ MISSING Telegram IDs — userId="${sentUserId}" chatId="${sentChatId}" — aborted before sending`
+    console.error(msg)
+    throw new Error(`No Telegram context for action "${action}" (userId="${sentUserId}", chatId="${sentChatId}")`)
+  }
+
   const { data, error } = await supabase.functions.invoke<RuntimeEnvelope<T>>(RUNTIME_FN, {
     body: payload,
   })
-  if (error) throw new Error(`[runtime] ${error.message}`)
-  if (!data)  throw new Error('[runtime] no response body')
-  if (!data.ok) throw new Error(`[runtime] action failed: ${data.error ?? 'unknown'}`)
+  if (error) {
+    console.error(`[runtime→${action}] ❌ invoke error:`, error.message)
+    throw new Error(`[runtime] ${error.message}`)
+  }
+  if (!data) {
+    console.error(`[runtime→${action}] ❌ no response body`)
+    throw new Error('[runtime] no response body')
+  }
+  if (!data.ok) {
+    console.error(`[runtime→${action}] ❌ server error:`, data.error ?? 'unknown')
+    throw new Error(`[runtime] action failed: ${data.error ?? 'unknown'}`)
+  }
+  console.log(`[runtime→${action}] ✅ ok`)
   return data
 }
 
