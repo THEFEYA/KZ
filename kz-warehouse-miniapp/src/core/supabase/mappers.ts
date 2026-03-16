@@ -91,6 +91,17 @@ function normChartItem(i: RpcBreakdownItem): BreakdownItem {
 const safeArr = (v: unknown): RpcBreakdownItem[] =>
   Array.isArray(v) ? (v as RpcBreakdownItem[]) : []
 
+// RPC may return main_insight/top_insight as a rich object {body,title,...} or a plain string
+const toInsightStr = (v: unknown): string | null => {
+  if (!v) return null
+  if (typeof v === 'string') return v
+  if (typeof v === 'object') {
+    const o = v as Record<string, unknown>
+    return (o.body ?? o.title ?? null) as string | null
+  }
+  return null
+}
+
 // ─── Queue row mapper ────────────────────────────────────────────────────────
 // Handles both RpcQueueRow (v2) and RpcQueueScreenRow (v1 screen — has priority/card_reason)
 
@@ -346,7 +357,7 @@ export function mapAnalyticsRow(row: RpcAnalyticsRow): AnalyticsData {
     byHeat,
     byFreshness,
     bySourceTier,
-    topInsight: row.top_insight ?? null,
+    topInsight: toInsightStr(row.top_insight),
     priorityPreview,
   }
 }
@@ -403,7 +414,7 @@ export function mapOverviewScreen(
       activeModeLabel: screen.active_mode_label_ru ?? null,
       summary,
       priorityPreview,
-      mainInsight:     screen.main_insight ?? analyticsData?.topInsight ?? null,
+      mainInsight:     toInsightStr(screen.main_insight) ?? analyticsData?.topInsight ?? null,
       analyticsPreview,
     }
   }
