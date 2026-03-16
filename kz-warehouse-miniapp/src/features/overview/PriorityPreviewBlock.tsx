@@ -14,21 +14,21 @@ export function PriorityPreviewBlock({ preview }: PriorityPreviewBlockProps) {
       value: preview.openFirst,
       color: 'var(--color-accent)',
       glow: true,
-      onClick: () => navigate('/queues'),
+      onClick: () => navigate('/queues?bucket=review_queue'),
     },
     {
       label: 'Высокий приоритет',
       value: preview.priorityCount,
       color: 'var(--color-hot)',
       glow: false,
-      onClick: () => navigate('/queues'),
+      onClick: () => navigate('/queues?bucket=review_queue'),
     },
     {
       label: 'На проверке',
       value: preview.reviewCount,
       color: 'var(--color-review)',
       glow: false,
-      onClick: () => navigate('/queues'),
+      onClick: () => navigate('/queues?bucket=review_queue'),
     },
   ]
 

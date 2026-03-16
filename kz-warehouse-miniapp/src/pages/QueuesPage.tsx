@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Page } from '@shared/ui/Page'
 import { QueueTabs } from '@features/queues/QueueTabs'
 import { QueueToolbar } from '@features/queues/QueueToolbar'
@@ -9,8 +10,14 @@ import { useQueueQuery, useAnalyticsQuery, useConfirmedLeadsQuery } from '@core/
 import { useFilters, useActiveMode } from '@core/state/selectors'
 import type { QueueBucket } from '@core/types/candidate'
 
+const VALID_BUCKETS: QueueBucket[] = ['action_queue', 'review_queue', 'confirmed_leads']
+
 export function QueuesPage() {
-  const [activeBucket, setActiveBucket] = useState<QueueBucket>('action_queue')
+  const [searchParams] = useSearchParams()
+  const bucketParam = searchParams.get('bucket') as QueueBucket | null
+  const initialBucket: QueueBucket =
+    bucketParam && VALID_BUCKETS.includes(bucketParam) ? bucketParam : 'action_queue'
+  const [activeBucket, setActiveBucket] = useState<QueueBucket>(initialBucket)
   const filters = useFilters()
   const mode = useActiveMode()
 
