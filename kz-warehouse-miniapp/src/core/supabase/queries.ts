@@ -121,7 +121,7 @@ export function useDetailQuery(candidateId: string | null, activeModeId?: string
   return useQuery({
     queryKey: ['detail_rt', candidateId, activeModeId],
     queryFn: async () => {
-      if (!candidateId) return null
+      if (!candidateId || candidateId === 'undefined') return null
 
       // Primary: runtime open_candidate
       try {
@@ -157,7 +157,7 @@ export function useDetailQuery(candidateId: string | null, activeModeId?: string
       if (!row) return null
       return { detail: mapDetailRow(row), source: 'legacy_fallback' as RuntimeSource }
     },
-    enabled: !!candidateId,
+    enabled: !!candidateId && candidateId !== 'undefined',
     staleTime: 5 * 60 * 1000,
     retry: 1,
   })

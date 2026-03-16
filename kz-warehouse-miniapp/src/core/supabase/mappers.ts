@@ -98,8 +98,12 @@ export function mapQueueRow(row: RpcQueueRow | RpcQueueScreenRow): Candidate {
   const screenRow = row as RpcQueueScreenRow
   const r = row as unknown as Record<string, unknown>
   const h = (r.header ?? {}) as Record<string, unknown>
+  const resolvedId = (r.candidate_id ?? h.candidate_id) as string | undefined
+  if (!resolvedId) {
+    console.warn('[mapQueueRow] candidate_id missing. Row keys:', Object.keys(r), '| header keys:', Object.keys(h))
+  }
   return {
-    id:                   (r.candidate_id ?? h.candidate_id) as string,
+    id:                   resolvedId as string,
     displayEntity:        (r.display_label_v2 ?? h.display_label_v2) as string,
     entityType:           mapEntityTypeRu(row.entity_type_ru),
     marketRole:           row.market_role_label_ru ?? '',

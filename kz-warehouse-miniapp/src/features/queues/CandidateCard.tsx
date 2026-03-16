@@ -14,6 +14,7 @@ export function CandidateCard({ candidate: c, nextCandidateId }: CandidateCardPr
   const navigate = useNavigate()
 
   const handleCardClick = () => {
+    if (!c.id || c.id === 'undefined') return
     hapticLight()
     navigate(buildDetailRoute(c.id))
   }
